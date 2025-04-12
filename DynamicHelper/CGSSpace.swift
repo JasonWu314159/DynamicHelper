@@ -1,10 +1,11 @@
+
+//  CGSSpace.swift
+//  boringNotch
 //
-//  CGSpace.swift
-//  DynamicHelper
-//
-//  Created by 吳佳昇 on 2025/4/13.
+//  Created by Alexander Greco on 2024-10-27.
 //
 
+/// Small Spaces API wrapper.
 import Foundation
 import AppKit
 

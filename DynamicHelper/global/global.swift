@@ -36,7 +36,7 @@ let EdgeToTop:CGFloat = 2.0
 func refreshResize(){
     if let screen = NSScreen.main {
         let safeAreaInsets = screen.safeAreaInsets
-        Resize = safeAreaInsets.top/32
+        Resize = safeAreaInsets.top == 0 ? 1 : safeAreaInsets.top/32
     }
 }
 

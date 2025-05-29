@@ -31,21 +31,45 @@ let WindowSize:[WindowType:(width:CGFloat,height:CGFloat,downRadius:CGFloat,upRa
 
 var Resize:CGFloat = 0
 
-let EdgeToTop:CGFloat = 2.0
+var hasNotch:Bool = true
+
+let EdgeToTop:CGFloat = 0
 
 func refreshResize(){
-    if let screen = NSScreen.main {
-        let safeAreaInsets = screen.safeAreaInsets
-        Resize = safeAreaInsets.top == 0 ? 1 : safeAreaInsets.top/32
+    var screen = getNowScreen()
+    let safeAreaInsets = screen.safeAreaInsets
+    hasNotch = safeAreaInsets.top > 0
+    Resize = safeAreaInsets.top == 0 ? 1 : safeAreaInsets.top/32
+    print(Resize)
+}
+
+
+func getNowScreen() -> NSScreen {
+    let Screens = getAllScreenInfo()
+    var screen:NSScreen
+    if(defaultWindowPos == -1){
+        screen = Screens[0].screen
+        for i in Screens{
+            if i.isBuiltin{
+                screen = i.screen
+            }
+        }
+    }else if(defaultWindowPos < Screens.count){
+        screen = Screens[defaultWindowPos].screen
+    }else{
+        screen = Screens[Screens.count-1].screen
     }
+    return screen
 }
 
 
 func getWindowSize(_ windowType:WindowType) -> CGSize {
     var w:CGFloat = WindowSize[windowType]?.width ?? 0
     var h:CGFloat = WindowSize[windowType]?.height ?? 0
+    if(!hasNotch && windowType == .hide){h=1;w=getNowScreen().frame.width}
     w *= Resize
     h *= Resize
+//    print(CGSize(width: w, height: h))
     return CGSize(width: w, height: h)
 }
 
@@ -53,6 +77,7 @@ func getWindowSize(_ windowType:WindowType) -> CGSize {
 func getWindowRadius(_ windowType:WindowType) -> (down:CGFloat, up:CGFloat) {
     var down:CGFloat = WindowSize[windowType]?.downRadius ?? 0
     var up:CGFloat = WindowSize[windowType]?.upRadius ?? 0
+    if(!hasNotch && windowType == .hide){down=1;up=0}
     down *= Resize
     up *= Resize
     return (down, up)
@@ -69,6 +94,7 @@ class WindowState: ObservableObject {
     @Published var type:WindowType = .hide
     @Published var outsideChange:WindowType? = nil
     @Published var isLock:Bool = false
+    @Published var ousideEnforceChange:Bool = false
 }
 var windowState:WindowState = WindowState()
 

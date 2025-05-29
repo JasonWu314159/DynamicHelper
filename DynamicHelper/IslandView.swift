@@ -113,8 +113,12 @@ struct IslandView: View {
                 }
                 .onChange(of: windowState.outsideChange) {
                     if(windowState.outsideChange != nil){
-                        refreshWindowSize(type:windowState.outsideChange ?? .hide)
+                        refreshWindowSize(
+                            type:windowState.outsideChange ?? .hide,
+                            Enforcement: windowState.ousideEnforceChange
+                        )
                         windowState.outsideChange = nil
+                        windowState.ousideEnforceChange = false
                     }
                 }
                 .onHover { hovering in
@@ -134,6 +138,9 @@ struct IslandView: View {
                         }
                     }
                     return handleDrop(providers: providers)
+                }
+                .onChange(of: windowHeight) { _,newValue in
+                    print("✅ windowHeight 改變為：\(newValue)")
                 }
             }
             .position(x: windowPosX,y: windowPosY)
@@ -163,24 +170,29 @@ struct IslandView: View {
         if(type == windowType.type && !Enforcement){return}
         let animateTime:CGFloat = 0.5
         isInAnimation = true
+        let size = getWindowSize(type)
+        let radius = getWindowRadius(type)
+        if(!hasNotch && windowType.type == .hide){windowWidth=1;windowHeight=1}
         withAnimation(.spring(response: isAnimated ? animateTime : 0, dampingFraction: 0.75)){
-            windowWidth = getWindowSize(type).width
-            windowHeight = getWindowSize(type).height
-            windowUpRadius = getWindowRadius(type).up
-            windowDownRadius = getWindowRadius(type).down
+            if(!hasNotch && type == .hide){windowWidth=1}
+            else{windowWidth = size.width}
+            windowHeight = size.height
+            windowUpRadius = radius.up
+            windowDownRadius = radius.down
             windowPosY = windowHeight/2+windowUpRadius/2
         }
         if(type == .hide){
             windowType.type = type
             DispatchQueue.main.asyncAfter(deadline: .now() + animateTime+0.01) {
                 appDelegate.update(type: type)
-                windowPosX = getWindowSize(type).width/2
+                windowPosX = size.width/2
                 isInAnimation = false
+                windowWidth = size.width
             }
         }else{
             if(defaultWindowType == .hide && type != .onCharge){lastWindowType = type}
             appDelegate.update(type: type)
-            windowPosX = getWindowSize(type).width/2
+            windowPosX = size.width/2
             withAnimation{
                 windowType.type = type
             }
@@ -200,9 +212,9 @@ struct IslandView: View {
                 }else if(!h){
                     type = .hide
                 }
+                refreshResize()
                 refreshWindowSize(type: type)
                 
-                refreshResize()
             }
         }
     }

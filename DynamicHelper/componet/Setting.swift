@@ -6,6 +6,32 @@
 //
 
 import SwiftUI
+import AppKit
+import CoreGraphics
+
+struct ScreenInfo:Identifiable, Hashable {
+    let id = UUID()
+    let index: Int
+    let screen: NSScreen
+    let displayID: CGDirectDisplayID
+    let isBuiltin: Bool
+    var name: String {
+        if index == 0{
+            return "主要顯示器"
+        }
+        return "延伸顯示器 \(index)"
+    }
+}
+
+func getAllScreenInfo() -> [ScreenInfo] {
+    NSScreen.screens.enumerated().compactMap { (index, screen) in
+        guard let screenID = screen.deviceDescription[.init("NSScreenNumber")] as? CGDirectDisplayID else {
+            return nil
+        }
+        let isBuiltin = CGDisplayIsBuiltin(screenID) != 0
+        return ScreenInfo(index: index, screen: screen, displayID: screenID, isBuiltin: isBuiltin)
+    }
+}
 
 struct SettingsView: View {
     @State private var selectedItem: String = "基本"
@@ -31,6 +57,7 @@ struct SettingsBody: View {
     @Binding var selectedItem: String
     @State private var homeViewType: WindowType = WindowType.exten
     @State private var shouldSaveCopyBook_: Bool = false
+    @State private var SelectWindowPos: Int = -1
     
     
     var body: some View{
@@ -52,7 +79,28 @@ struct SettingsBody: View {
                         defaultWindowType = newValue
                         saveSettings()
                     }
-                    .frame(width: 100)
+                    .frame(width: 150)
+                }
+                HStack{
+                    Text("視窗位置")
+                    Spacer()
+                    Picker("", selection: $SelectWindowPos) {
+                        Text("內建顯示器").tag(-1)
+                        ForEach(getAllScreenInfo()){item in
+                            Text(item.name).tag(item.index)                            
+                        }
+                    }.onAppear {
+                        saveSettings()
+                        SelectWindowPos = defaultWindowPos
+                    }
+                    .onChange(of: SelectWindowPos) { _ ,newValue in
+                        defaultWindowPos = newValue
+                        saveSettings()
+                        refreshResize()
+                        windowState.ousideEnforceChange = true
+                        windowState.outsideChange = .hide
+                    }
+                    .frame(width: 150)
                 }
                 
             }
@@ -104,12 +152,14 @@ struct SettingsBody: View {
 var defaultWindowType:WindowType = .exten
 var lastWindowType:WindowType = .exten
 var shouldSaveCopyBook:Bool = false
+var defaultWindowPos:Int = 0
 
 
 func saveSettings() {
     UserDefaults.standard.set(defaultWindowType.rawValue, forKey: "defaultWindowType")
     UserDefaults.standard.set(lastWindowType.rawValue, forKey: "lastWindowType")
     UserDefaults.standard.set(shouldSaveCopyBook, forKey: "shouldSaveCopyBook")
+    UserDefaults.standard.set(defaultWindowPos, forKey: "defaultWindowPos")
     if(shouldSaveCopyBook){
         UserDefaults.standard.set(stringStorage.Item, forKey: "CopyBook")
     }
@@ -122,6 +172,10 @@ func getSettings() {
     if let raw = UserDefaults.standard.string(forKey: "lastWindowType"),
        let type = WindowType(rawValue: raw) {
         lastWindowType = type
+    }
+    if let raw = UserDefaults.standard.string(forKey: "defaultWindowPos"),
+       let Pos = Int(raw) {
+        defaultWindowPos = Pos
     }
     if let raw = UserDefaults.standard.string(forKey: "defaultWindowType"),
        let type = WindowType(rawValue: raw) {

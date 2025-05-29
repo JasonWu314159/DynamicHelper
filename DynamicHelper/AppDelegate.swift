@@ -17,6 +17,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var islandView: IslandView!
     let hoverState = HoverState()
     var delegate:SettingsWindowDelegate!
+    var keepAliveTimer: Timer?
+    var keepAliveActivity: NSObjectProtocol?
+    
+    var screenMonitor: ScreenMonitor!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         refreshResize()
@@ -24,6 +28,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         islandView = IslandView(hoverState: hoverState,appDelegate: self)
 //            .environmentObject(windowState) as! IslandView as IslandView
         powerMonitor = PowerMonitor(windowState)
+        screenMonitor = ScreenMonitor(self)
         let hostView = NSHostingView(rootView: islandView)
         let contentSize = hostView.fittingSize // 取得實際尺寸
         
@@ -46,24 +51,34 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.hasShadow = false
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary,.stationary]
         
-        window.contentView = NSHostingView(rootView: islandView)
+        window.contentView = hostView
         window.makeKeyAndOrderFront(nil)
         space.windows.insert(window)
-        
-        
+        startKeepAliveTimer()
+        preventAppNap()
 //        powerMonitor = PowerMonitor()
     }
     
     func update(type: WindowType) {
-        
+        // 找出內建螢幕（即 MacBook 自帶的螢幕）
         guard let win = self.window else { return }
-        var size = getWindowSize(type)
-        let screen = NSScreen.main?.visibleFrame ?? .zero
-        let sizeDelta: CGFloat = getWindowRadius(type).up*2
-        size.height += sizeDelta
-        let origin = CGPoint(x: (screen.width - size.width) / 2,
-                             y: NSScreen.main!.frame.height-size.height+EdgeToTop)
-        win.setFrame(NSRect(origin: origin, size: size), display: true, animate: false)
+        screenMonitor.moveWindowToBuiltInDisplay(window:win, winType: type)
+    }
+    
+    
+    func preventAppNap() {
+        keepAliveActivity = ProcessInfo.processInfo.beginActivity(
+            options: [.idleSystemSleepDisabled, .userInitiated],
+            reason: "Prevent App Nap for Dynamic Island"
+        )
+    }
+    
+    func startKeepAliveTimer() {
+        keepAliveTimer = Timer.scheduledTimer(withTimeInterval: 600, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            self.window?.orderFrontRegardless()
+            NSLog("KeepAliveTimer triggered - Window still alive")
+        }
     }
     
     func showSettingsWindow() {
@@ -91,6 +106,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         settingsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+    
+    func applicationWillTerminate(_ notification: Notification) {
+        screenMonitor = nil // 自動 deinit 時會 removeObserver
     }
 }
 

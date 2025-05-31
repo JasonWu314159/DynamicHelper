@@ -184,7 +184,7 @@ func getSettings() {
     }
     shouldSaveCopyBook = UserDefaults.standard.bool(forKey: "shouldSaveCopyBook")
     if(shouldSaveCopyBook){
-        stringStorage.Item = (UserDefaults.standard.array(forKey: "CopyBook") ?? []) as! [String]
+        stringStorage.Item = (UserDefaults.standard.array(forKey: "CopyBook") ?? []) as! [(String,Bool)]
     }
     
 }

@@ -33,7 +33,7 @@ class ScreenMonitor {
         }
         refreshResize()
         windowState.ousideEnforceChange = true
-        windowState.outsideChange = .hide
+        windowState.outsideChange = windowState.type
         // 你也可以在這裡加上自動調整視窗或通知 AppDelegate 的邏輯
     }
     
@@ -41,7 +41,7 @@ class ScreenMonitor {
         var size = getWindowSize(winType)
         let sizeDelta: CGFloat = getWindowRadius(winType).up*2
         size.height += sizeDelta
-        var screen = getNowScreen()
+        let screen = getNowScreen()
         let frame = NSRect(
             origin: NSPoint(
                 x: screen.frame.origin.x + screen.frame.size.width / 2 - size.width / 2,

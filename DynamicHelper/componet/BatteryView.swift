@@ -124,7 +124,7 @@ struct CustomBatteryView: View {
                 .frame(width: 40, height: 12)
                 .foregroundColor(.gray)
             RoundedRectangle(cornerRadius: 2)
-                .fill(getColor(level))
+                .fill(getColor())
                 .frame(width: 18 * level, height: 7)
                 .padding(.leading, 9.5)
         }
@@ -138,7 +138,7 @@ struct CustomBatteryView: View {
         )
     }
     
-    func getColor(_ a:CGFloat) -> Color {
+    func getColor() -> Color {
         var color: Color = .white
         if level >= 0.8 {
             if(isCharge){

@@ -36,11 +36,11 @@ var hasNotch:Bool = true
 let EdgeToTop:CGFloat = 0
 
 func refreshResize(){
-    var screen = getNowScreen()
+    let screen = getNowScreen()
     let safeAreaInsets = screen.safeAreaInsets
     hasNotch = safeAreaInsets.top > 0
     Resize = safeAreaInsets.top == 0 ? 1 : safeAreaInsets.top/32
-    print(Resize)
+//    print(Resize)
 }
 
 
@@ -48,12 +48,12 @@ func getNowScreen() -> NSScreen {
     let Screens = getAllScreenInfo()
     var screen:NSScreen
     if(defaultWindowPos == -1){
-        screen = Screens[0].screen
         for i in Screens{
             if i.isBuiltin{
-                screen = i.screen
+                return i.screen
             }
         }
+        screen = Screens[0].screen
     }else if(defaultWindowPos < Screens.count){
         screen = Screens[defaultWindowPos].screen
     }else{
@@ -108,7 +108,7 @@ class ViewSpace: ObservableObject {
         withAnimation(.easeInOut(duration: 0.2)){
             isHovering = frame.contains(point)
         }
-        print(isHovering)
+//        print(isHovering)
     }
 }
 
@@ -118,8 +118,9 @@ var FileDropViewSpace:ViewSpace = ViewSpace()
 
 func getMousePoint() -> CGPoint {
     var mousePosition = NSEvent.mouseLocation
-    mousePosition.y = NSScreen.main!.frame.height - mousePosition.y
-    mousePosition.x -= NSScreen.main!.frame.width/2 - getWindowSize(windowState.type).width/2
+    let screen = getNowScreen()
+    mousePosition.y = screen.frame.height - mousePosition.y + screen.frame.origin.y
+    mousePosition.x -= screen.frame.width/2 - getWindowSize(windowState.type).width/2 + screen.frame.origin.x
     return mousePosition
 }
 

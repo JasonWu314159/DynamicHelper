@@ -102,7 +102,8 @@ struct IslandView: View {
                 .clipShape(TopRounded(Radius: (down:windowDownRadius, up:windowUpRadius)))
                 //            .animation(nil, value: windowType.type)
                 .onAppear(){
-                    refreshWindowSize(type: windowType.type, isAnimated:false, Enforcement:true)
+//                    print(defaultWindowPos)
+                    refreshWindowSize(type: .hide, isAnimated:false, Enforcement:true)
                     startIdleKeepAlive()
                 }
                 .onChange(of: hoverState.isDragger) {
@@ -138,9 +139,6 @@ struct IslandView: View {
                         }
                     }
                     return handleDrop(providers: providers)
-                }
-                .onChange(of: windowHeight) { _,newValue in
-                    print("✅ windowHeight 改變為：\(newValue)")
                 }
             }
             .position(x: windowPosX,y: windowPosY)
@@ -223,6 +221,7 @@ struct IslandView: View {
         let h = hovering ?? hoverState.isDragger
         isHovering = h
         mouseLocation = NSEvent.mouseLocation
+        print(mouseLocation)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             if isHovering == h && mouseLocation != NSEvent.mouseLocation {
                 let type:WindowType = h ? .Drop : .hide

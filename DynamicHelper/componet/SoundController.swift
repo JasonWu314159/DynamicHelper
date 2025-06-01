@@ -92,6 +92,9 @@ struct SoundController: View {
         .onChange(of: VolumeManager.canGetVolume) { oldValue,newValue in
             volume = Double(VolumeManager.volume)
         }
+        .onAppear{
+            volumeManager.setupVolumeListener()
+        }
     }
     
     

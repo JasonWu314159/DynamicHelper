@@ -376,6 +376,7 @@ final class VolumeListenerManager: ObservableObject {
     private var outputDeviceID = AudioDeviceID(0)
     private var volumeListenerBlock: AudioObjectPropertyListenerBlock?
     private var isSuspended = false
+    private var HasSetupListener: Bool = false
 
     @Published var volume: Float32 = 0
     @Published var isMuted: Bool = false
@@ -390,6 +391,7 @@ final class VolumeListenerManager: ObservableObject {
     }
 
     func setupVolumeListener() {
+        if HasSetupListener { removeVolumeListener() }
         // 取得預設輸出裝置
         var size = UInt32(MemoryLayout<AudioDeviceID>.size)
         var address = AudioObjectPropertyAddress(
@@ -455,6 +457,7 @@ final class VolumeListenerManager: ObservableObject {
         
         // 第一次自己抓一次音量
         fetchVolumeState()
+        HasSetupListener = true
     }
     
     func removeVolumeListener() {
@@ -487,6 +490,7 @@ final class VolumeListenerManager: ObservableObject {
         if muteRemoveStatus != noErr {
             print("移除靜音監聽器失敗: \(muteRemoveStatus)")
         }
+        HasSetupListener = false 
     }
     
     private func fetchVolumeState() {

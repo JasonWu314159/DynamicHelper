@@ -20,12 +20,12 @@ enum WindowType:String, Codable{
 }
 
 let WindowSize:[WindowType:(width:CGFloat,height:CGFloat,downRadius:CGFloat,upRadius:CGFloat)] = [
-    .hide:(width:190,height:32,downRadius:11,upRadius:6),
-    .onCharge:(width:400,height:33,downRadius:11,upRadius:6),
-    .exten:(width:600,height:200,downRadius:25,upRadius:20),
-    .Drop:(width:600,height:200,downRadius:25,upRadius:20),
-    .Clock:(width:600,height:200,downRadius:25,upRadius:20),
-    .Hardware:(width:600,height:200,downRadius:25,upRadius:20),
+    .hide:(width:0,height:0,downRadius:11,upRadius:6),
+    .onCharge:(width:210,height:1,downRadius:11,upRadius:6),
+    .exten:(width:410,height:168,downRadius:25,upRadius:20),
+    .Drop:(width:410,height:168,downRadius:25,upRadius:20),
+    .Clock:(width:410,height:168,downRadius:25,upRadius:20),
+    .Hardware:(width:410,height:168,downRadius:25,upRadius:20),
     .ForceFocus:(width:1470,height:960,downRadius:0,upRadius:0),
 ]
 
@@ -67,9 +67,13 @@ func getWindowSize(_ windowType:WindowType) -> CGSize {
     var w:CGFloat = WindowSize[windowType]?.width ?? 0
     var h:CGFloat = WindowSize[windowType]?.height ?? 0
     if(!hasNotch && windowType == .hide){h=1;w=getNowScreen().frame.width}
-    w *= Resize
-    h *= Resize
-//    print(CGSize(width: w, height: h))
+    else if(!hasNotch && windowType != .hide){h += 32;w += 190}
+    else {
+        let screen = getNowScreen()
+        let safeAreaInsets = screen.safeAreaInsets
+        w += Resize < 1 && windowType != .hide ? 190 : Resize*190
+        h += safeAreaInsets.top
+    }
     return CGSize(width: w, height: h)
 }
 
@@ -78,8 +82,10 @@ func getWindowRadius(_ windowType:WindowType) -> (down:CGFloat, up:CGFloat) {
     var down:CGFloat = WindowSize[windowType]?.downRadius ?? 0
     var up:CGFloat = WindowSize[windowType]?.upRadius ?? 0
     if(!hasNotch && windowType == .hide){down=1;up=0}
-    down *= Resize
-    up *= Resize
+    else if(windowType == .hide){
+        down *= Resize
+        up *= Resize
+    }
     return (down, up)
 }
 

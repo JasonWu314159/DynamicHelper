@@ -31,7 +31,9 @@ class ScreenMonitor {
         for (index, screen) in NSScreen.screens.enumerated() {
             print("螢幕 \(index): frame = \(screen.frame)")
         }
-        islandTypeManager.refreshIsland()
+        DispatchQueue.main.async {
+            islandTypeManager.refreshIsland()
+        }
         // 你也可以在這裡加上自動調整視窗或通知 AppDelegate 的邏輯
     }
     

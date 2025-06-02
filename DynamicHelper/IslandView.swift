@@ -178,7 +178,7 @@ struct IslandView: View {
         let size = IslandTypeManager.getWindowSize(type)
         let radius = IslandTypeManager.getWindowRadius(type)
         if(!hasnotch && island.checkNowIslandTypeIs(.hide)){windowWidth=1;windowHeight=1}
-        let isToBig = IslandTypeManager.isIslandTypeToBig(from: island.getNowIslandType(), to: type)
+        let isToSmall = IslandTypeManager.isIslandTypeToSmall(from: island.getNowIslandType(), to: type)
         let animateTime:CGFloat = 0.5 //isToBig ? 0.5 : 0.35
         withAnimation(.spring(response: isAnimated ? animateTime : 0, dampingFraction: 0.75)){
             if(!hasnotch && type == .hide){windowWidth=1}
@@ -188,7 +188,7 @@ struct IslandView: View {
             windowDownRadius = radius.down
             windowPosY = windowHeight/2+windowUpRadius/2
         }
-        if(!isToBig){
+        if(isToSmall){
             island.changeIslandType(.hide)
             DispatchQueue.main.asyncAfter(deadline: .now() + animateTime+0.01) {
                 appDelegate.update(type: type)

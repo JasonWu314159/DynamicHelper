@@ -55,6 +55,7 @@ class IslandTypeManager: ObservableObject {
     @Published private(set) var ousideChangeWithAnimate:Bool = false
     @Published var defaultWindowType:IslandType = .exten
     @Published var lastWindowType:IslandType = .exten
+    @Published private var isPendingOutsideChange:Bool = false
     
     private var islandViewChangeQueue:[outsideChangeInfo] = []
     
@@ -72,8 +73,8 @@ class IslandTypeManager: ObservableObject {
 
     static let EdgeToTop:CGFloat = 0
     
-    static func isIslandTypeToBig(from:IslandType,to:IslandType) -> Bool{
-        return from.level < to.level
+    static func isIslandTypeToSmall(from:IslandType,to:IslandType) -> Bool{
+        return from.level > to.level
     }
     
     static func getWindowSize(_ windowType:IslandType) -> CGSize {
@@ -107,23 +108,28 @@ class IslandTypeManager: ObservableObject {
     }
     
     func OutsideChangeIslandType(to:IslandType,Animate:Bool = true ,EnforceChange:Bool = false){
-        if(outsideChange != nil){
-            islandViewChangeQueue.append(outsideChangeInfo(type: to,animate: Animate,Enforce: EnforceChange))
-            return
-        }
-        ousideEnforceChange = EnforceChange
-        outsideChange = to
-        ousideChangeWithAnimate = Animate
+        OutsideChangeIslandType(outsideChange: outsideChangeInfo(type: to, animate: Animate, Enforce: EnforceChange))
     }
     
     func OutsideChangeIslandType(outsideChange OusideChangeInfo:outsideChangeInfo){
-        if(outsideChange != nil){
+        guard !isPendingOutsideChange else {
             islandViewChangeQueue.append(OusideChangeInfo)
             return
         }
-        ousideEnforceChange = OusideChangeInfo.Enforce
-        outsideChange = OusideChangeInfo.type
-        ousideChangeWithAnimate = OusideChangeInfo.animate
+        isPendingOutsideChange = true
+        // 安排在下一幀執行
+        DispatchQueue.main.async {
+            if self.outsideChange != nil {
+                self.islandViewChangeQueue.append(OusideChangeInfo)
+            } else {
+                self.ousideEnforceChange = OusideChangeInfo.Enforce
+                self.outsideChange = OusideChangeInfo.type
+                self.ousideChangeWithAnimate = OusideChangeInfo.animate
+            }
+
+            // 下一幀已經執行完，解鎖
+            self.isPendingOutsideChange = false
+        }
     }
 
     func getNowIslandType() -> IslandType {
@@ -163,9 +169,14 @@ class IslandTypeManager: ObservableObject {
         return ousideEnforceChange || (outsideChange != type && outsideChange != nil)
     }
     
-    func changelastIslandType(_ type:IslandType?){
-        if(defaultWindowType == .hide && type != .onCharge && type != .gameMode){
-            lastWindowType = type == nil ? self.type : type!
+    func changelastIslandType(_ typeOptional:IslandType?){
+        guard let typeReal = typeOptional else{
+            lastWindowType = lastWindowType.level > 1 ? lastWindowType : .exten
+            return
+        }
+        
+        if(defaultWindowType == .hide && typeReal.level > 1){
+            lastWindowType = typeReal
         }
     }
 }

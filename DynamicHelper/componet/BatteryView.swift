@@ -139,6 +139,7 @@ final class PowerMonitor {
     
     private var runLoopSource: CFRunLoopSource?
     private var lastPluggedInState: Bool = false
+    private var ChargingStateChangeTime = Date()
     
     init() {
         let loop = CFRunLoopGetCurrent()
@@ -175,9 +176,14 @@ final class PowerMonitor {
     }
     
     func monitorChargeEvent() {
+        let showTime = 3.0
+        ChargingStateChangeTime = Date()
         if islandTypeManager.checkNowIslandTypeIs(.hide) {
             islandTypeManager.OutsideChangeIslandType(to: .onCharge)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + showTime) {
+            if(Date().timeIntervalSince(self.ChargingStateChangeTime) >= showTime){
+//                print(Date().timeIntervalSince(self.ChargingStateChangeTime))
                 if islandTypeManager.checkNowIslandTypeIs(.onCharge) {
                     islandTypeManager.OutsideChangeIslandType(to: .hide)
                 }

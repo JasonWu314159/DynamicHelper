@@ -31,21 +31,22 @@ class ScreenMonitor {
         for (index, screen) in NSScreen.screens.enumerated() {
             print("螢幕 \(index): frame = \(screen.frame)")
         }
-        refreshResize()
-        windowState.ousideEnforceChange = true
-        windowState.outsideChange = windowState.type
+        islandTypeManager.refreshIsland()
         // 你也可以在這裡加上自動調整視窗或通知 AppDelegate 的邏輯
     }
     
-    func moveWindowToBuiltInDisplay(window: NSWindow, winType:WindowType = windowState.type) {
-        var size = getWindowSize(winType)
-        let sizeDelta: CGFloat = getWindowRadius(winType).up*2
+    func moveWindowToBuiltInDisplay(
+        window: NSWindow,
+        winType:IslandTypeManager.IslandType = islandTypeManager.getNowIslandType()
+    ) {
+        var size = IslandTypeManager.getWindowSize(winType)
+        let sizeDelta: CGFloat = IslandTypeManager.getWindowRadius(winType).up*2
         size.height += sizeDelta
         let screen = getNowScreen()
         let frame = NSRect(
             origin: NSPoint(
                 x: screen.frame.origin.x + screen.frame.size.width / 2 - size.width / 2,
-                y: screen.frame.origin.y + screen.frame.size.height-size.height+EdgeToTop
+                y: screen.frame.origin.y + screen.frame.size.height-size.height+IslandTypeManager.EdgeToTop
             ),
             size: size
         )

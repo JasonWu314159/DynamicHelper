@@ -18,10 +18,10 @@ struct HoverTriggerView: View {
         Rectangle()
             .fill(Color.blue)
             .frame(
-                width: WindowSize[.hide]?.width,
-                height: WindowSize[.hide]?.height
+                width: IslandTypeManager.getWindowSize(.hide).width,
+                height: IslandTypeManager.getWindowSize(.hide).height
             )
-            .cornerRadius(WindowSize[.hide]?.downRadius ?? 0)
+            .cornerRadius(IslandTypeManager.getWindowRadius(.hide).down)
             .contentShape(Rectangle())
             .onHover { hovering in
                 hoverState.isHovering = hovering

@@ -24,7 +24,7 @@ struct ClockView: View {
             ZStack {
                 // 畫數字
                 RoundedRectangle(cornerRadius: size*0.2)
-                    .fill(isHovering && windowState.type != .Clock ? .gray.opacity(0.2) : .clear)
+                    .fill(isHovering && !islandTypeManager.checkNowIslandTypeIs(.Clock) ? .gray.opacity(0.2) : .clear)
                     .frame(width: size*0.95, height: size*0.95)
                 
                 

@@ -23,11 +23,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var screenMonitor: ScreenMonitor!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        refreshResize()
         getSettings()
         islandView = IslandView(hoverState: hoverState,appDelegate: self)
 //            .environmentObject(windowState) as! IslandView as IslandView
-        powerMonitor = PowerMonitor(windowState)
+        powerMonitor = PowerMonitor()
         screenMonitor = ScreenMonitor(self)
         let hostView = NSHostingView(rootView: islandView)
         let contentSize = hostView.fittingSize // 取得實際尺寸
@@ -37,7 +36,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let windowHeight: CGFloat = contentSize.height
         
         let rect = NSRect(x: (screenWidth - windowWidth) / 2,
-                          y: NSScreen.main!.frame.height-windowHeight+EdgeToTop,
+                          y: NSScreen.main!.frame.height-windowHeight+IslandTypeManager.EdgeToTop,
                           width: windowWidth,
                           height: windowHeight)
         
@@ -59,7 +58,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 //        powerMonitor = PowerMonitor()
     }
     
-    func update(type: WindowType) {
+    func update(type: IslandTypeManager.IslandType) {
         // 找出內建螢幕（即 MacBook 自帶的螢幕）
         guard let win = self.window else { return }
         screenMonitor.moveWindowToBuiltInDisplay(window:win, winType: type)

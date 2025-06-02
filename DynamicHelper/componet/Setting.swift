@@ -55,7 +55,7 @@ struct SettingsView: View {
 
 struct SettingsBody: View {
     @Binding var selectedItem: String
-    @State private var homeViewType: WindowType = WindowType.exten
+    @State private var homeViewType: IslandTypeManager.IslandType = .exten
     @State private var shouldSaveCopyBook_: Bool = false
     @State private var SelectWindowPos: Int = -1
     
@@ -68,15 +68,15 @@ struct SettingsBody: View {
                     Text("初始畫面")
                     Spacer()
                     Picker("", selection: $homeViewType) {
-                        Text("上一次打開").tag(WindowType.hide)
-                        Text("預設").tag(WindowType.exten)
-                        Text("檔案").tag(WindowType.Drop)
+                        Text("上一次打開").tag(IslandTypeManager.IslandType.hide)
+                        Text("預設").tag(IslandTypeManager.IslandType.exten)
+                        Text("檔案").tag(IslandTypeManager.IslandType.Drop)
                     }.onAppear {
                         saveSettings()
-                        homeViewType = defaultWindowType
+                        homeViewType = islandTypeManager.defaultWindowType
                     }
                     .onChange(of: homeViewType) { _ ,newValue in
-                        defaultWindowType = newValue
+                        islandTypeManager.defaultWindowType = newValue
                         saveSettings()
                     }
                     .frame(width: 150)
@@ -96,9 +96,7 @@ struct SettingsBody: View {
                     .onChange(of: SelectWindowPos) { _ ,newValue in
                         defaultWindowPos = newValue
                         saveSettings()
-                        refreshResize()
-                        windowState.ousideEnforceChange = true
-                        windowState.outsideChange = .hide
+                        islandTypeManager.OutsideChangeIslandType(to: .hide,EnforceChange: true)
                     }
                     .frame(width: 150)
                 }
@@ -149,15 +147,15 @@ struct SettingsBody: View {
 
 
 
-var defaultWindowType:WindowType = .exten
-var lastWindowType:WindowType = .exten
+//var defaultWindowType:WindowType = .exten
+//var lastWindowType:WindowType = .exten
 var shouldSaveCopyBook:Bool = false
 var defaultWindowPos:Int = 0
 
 
 func saveSettings() {
-    UserDefaults.standard.set(defaultWindowType.rawValue, forKey: "defaultWindowType")
-    UserDefaults.standard.set(lastWindowType.rawValue, forKey: "lastWindowType")
+    UserDefaults.standard.set(islandTypeManager.defaultWindowType.rawValue, forKey: "defaultWindowType")
+    UserDefaults.standard.set(islandTypeManager.lastWindowType.rawValue, forKey: "lastWindowType")
     UserDefaults.standard.set(shouldSaveCopyBook, forKey: "shouldSaveCopyBook")
     UserDefaults.standard.set(defaultWindowPos, forKey: "defaultWindowPos")
     if(shouldSaveCopyBook){
@@ -170,17 +168,17 @@ func saveSettings() {
 func getSettings() {
     
     if let raw = UserDefaults.standard.string(forKey: "lastWindowType"),
-       let type = WindowType(rawValue: raw) {
-        lastWindowType = type
+       let type = IslandTypeManager.IslandType(rawValue: raw) {
+        islandTypeManager.lastWindowType = type
     }
     if let raw = UserDefaults.standard.string(forKey: "defaultWindowPos"),
        let Pos = Int(raw) {
         defaultWindowPos = Pos
     }
     if let raw = UserDefaults.standard.string(forKey: "defaultWindowType"),
-       let type = WindowType(rawValue: raw) {
-        defaultWindowType = type
-        if(defaultWindowType != .hide){lastWindowType = defaultWindowType}
+       let type = IslandTypeManager.IslandType(rawValue: raw) {
+        islandTypeManager.defaultWindowType = type
+        if(islandTypeManager.defaultWindowType != .hide){islandTypeManager.lastWindowType = islandTypeManager.defaultWindowType}
     }
     shouldSaveCopyBook = UserDefaults.standard.bool(forKey: "shouldSaveCopyBook")
     if(shouldSaveCopyBook){

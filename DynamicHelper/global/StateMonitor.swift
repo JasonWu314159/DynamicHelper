@@ -7,12 +7,48 @@
 
 import AppKit
 
+func getAppBundleURL(for app: NSRunningApplication) -> URL? {
+    guard let exeURL = app.executableURL else {
+        print("❌ 無法取得 executableURL")
+        return nil
+    }
+
+    // 回推至 .app 路徑：.../Contents/MacOS/life_game -> /Applications/life_game.app
+    let appURL = exeURL
+        .deletingLastPathComponent() // MacOS
+        .deletingLastPathComponent() // Contents
+        .deletingLastPathComponent() // .app
+
+    if FileManager.default.fileExists(atPath: appURL.path) {
+        return appURL
+    } else {
+        print("❌ 推回的 .app 路徑不存在：\(appURL.path)")
+        return nil
+    }
+}
+
 func getAppCategory(_ app: NSRunningApplication) -> String? {
-    guard let bundleURL = app.bundleURL else { return nil }
+    let bundleURL: URL
+    if let URL = app.bundleURL{
+        if URL.pathComponents[1] == "private"{
+            bundleURL = URL.deletingLastPathComponent()
+        }else{
+            bundleURL = URL
+        }
+    }else{
+        guard let URL = getAppBundleURL(for: app) else {
+            print("❌ 無法取得 bundleURL")
+            return nil
+        }
+        bundleURL = URL
+    }
+    
 
     let candidatePaths = [
         bundleURL.appendingPathComponent("Contents/Info.plist"),
-        bundleURL.appendingPathComponent("Info.plist")
+        bundleURL.appendingPathComponent("Info.plist"),
+        bundleURL.appendingPathComponent("iTunesMetadata.plist"),
+//        bundleURL.appendingPathComponent("Info.plist")
     ]
 
     for path in candidatePaths {
@@ -20,16 +56,40 @@ func getAppCategory(_ app: NSRunningApplication) -> String? {
            let category = info["LSApplicationCategoryType"] as? String {
             return category
         }
+        if let info = NSDictionary(contentsOf: path),
+           let categories = info["categories"] as? [String] {
+            if let gameCategory = categories.first(where: { $0.contains("games") }) {
+                return gameCategory
+            }else{
+                return categories.first
+            }
+        }
     }
+    print("No category found")
     return nil
 }
 
 func isLikelyGameApp() -> Bool {
     guard let app = NSWorkspace.shared.frontmostApplication else {print("can't get frontmost app"); return false }
+//    for app in NSWorkspace.shared.runningApplications {
+//        let name = app.localizedName ?? "(no name)"
+//        let pid = app.processIdentifier
+//        let bundle = app.bundleURL?.path ?? "(no bundleURL)"
+//        let exe = app.executableURL?.path ?? "(no exeURL)"
+//        print("[\(pid)] \(name)")
+//        print("    bundleURL: \(bundle)")
+//        print("    executableURL: \(exe)")
+//        print("    bundleID: \(app.bundleIdentifier ?? "(nil)")")
+////    }
+    let gamesCategory: Set<String> = [
+        "public.app-category.games",
+        "public.app-category.board-games"
+    ]
+    
 
     if let category = getAppCategory(app) {
-//        print("App 類別：\(category)")
-        return category == "public.app-category.games"
+        print("App 類別：\(category)")
+        return category.lowercased().contains("games")
     }
 
     // 2. 常見遊戲 bundle identifier 白名單

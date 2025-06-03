@@ -71,16 +71,7 @@ func getAppCategory(_ app: NSRunningApplication) -> String? {
 
 func isLikelyGameApp() -> Bool {
     guard let app = NSWorkspace.shared.frontmostApplication else {print("can't get frontmost app"); return false }
-//    for app in NSWorkspace.shared.runningApplications {
-//        let name = app.localizedName ?? "(no name)"
-//        let pid = app.processIdentifier
-//        let bundle = app.bundleURL?.path ?? "(no bundleURL)"
-//        let exe = app.executableURL?.path ?? "(no exeURL)"
-//        print("[\(pid)] \(name)")
-//        print("    bundleURL: \(bundle)")
-//        print("    executableURL: \(exe)")
-//        print("    bundleID: \(app.bundleIdentifier ?? "(nil)")")
-////    }
+
     let gamesCategory: Set<String> = [
         "public.app-category.games",
         "public.app-category.board-games"

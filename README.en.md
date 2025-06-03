@@ -1,10 +1,5 @@
 # DynamicHelper
 
-> 🌐 Select Language | 選擇語言:
-> [🇺🇸 English](README.en.md) | [🇹🇼 繁體中文](README.zh-Hant.md)
-
----
-
 **DynamicHelper** is a dynamic floating window utility designed for **macOS**, inspired by the iPhone’s Dynamic Island. It integrates **battery monitoring, music playback detection, clipboard note storage, and multi-screen adaptive display**, delivering an efficient and non-intrusive desktop experience.
 
 > 🖥️ Fully supports Apple Silicon and optimized for macOS Spaces.

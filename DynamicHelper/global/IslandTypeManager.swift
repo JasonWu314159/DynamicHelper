@@ -23,10 +23,10 @@ class IslandTypeManager: ObservableObject {
         
         var level: Int {
             switch self {
-            case .hide: return 0
             case .onCharge, .gameMode: return 1
             case .exten, .Drop, .Clock, .Hardware: return 2
             case .ForceFocus: return 3
+            default: return 0
             }
         }
     }
@@ -34,7 +34,7 @@ class IslandTypeManager: ObservableObject {
     static private let WindowSize:[IslandType:(width:CGFloat,height:CGFloat,downRadius:CGFloat,upRadius:CGFloat)] = [
         .hide:(width:0,height:0,downRadius:11,upRadius:6),
         .onCharge:(width:210,height:1,downRadius:11,upRadius:6),
-        .gameMode:(width:210,height:1,downRadius:11,upRadius:6),
+        .gameMode:(width:300,height:1,downRadius:11,upRadius:6),
         .exten:(width:410,height:168,downRadius:25,upRadius:20),
         .Drop:(width:410,height:168,downRadius:25,upRadius:20),
         .Clock:(width:410,height:168,downRadius:25,upRadius:20),
@@ -56,6 +56,7 @@ class IslandTypeManager: ObservableObject {
     @Published var defaultWindowType:IslandType = .exten
     @Published var lastWindowType:IslandType = .exten
     @Published private var isPendingOutsideChange:Bool = false
+    @Published private var isTypeChanging:Bool = false
     
     private var islandViewChangeQueue:[outsideChangeInfo] = []
     
@@ -75,6 +76,10 @@ class IslandTypeManager: ObservableObject {
     
     static func isIslandTypeToSmall(from:IslandType,to:IslandType) -> Bool{
         return from.level > to.level
+    }
+    
+    static func isIslandTypeToBig(from:IslandType,to:IslandType) -> Bool{
+        return from.level < to.level
     }
     
     static func getWindowSize(_ windowType:IslandType) -> CGSize {
@@ -115,9 +120,13 @@ class IslandTypeManager: ObservableObject {
         OutsideChangeIslandType(outsideChange: outsideChangeInfo(type: to, animate: Animate, Enforce: EnforceChange))
     }
     
-    func OutsideChangeIslandType(outsideChange OusideChangeInfo:outsideChangeInfo){
-        guard !isPendingOutsideChange else {
-            islandViewChangeQueue.append(OusideChangeInfo)
+    func OutsideChangeIslandType(outsideChange OusideChangeInfo:outsideChangeInfo, tofirst:Bool = false){
+        guard !isPendingOutsideChange || isTypeChanging else {
+            if tofirst{
+                islandViewChangeQueue.insert(OusideChangeInfo, at: 0)
+            }else if islandViewChangeQueue.count <= 1{
+                islandViewChangeQueue.append(OusideChangeInfo)
+            }
             return
         }
         isPendingOutsideChange = true
@@ -130,10 +139,16 @@ class IslandTypeManager: ObservableObject {
                 self.outsideChange = OusideChangeInfo.type
                 self.ousideChangeWithAnimate = OusideChangeInfo.animate
             }
-
+            
             // 下一幀已經執行完，解鎖
-            self.isPendingOutsideChange = false
+            DispatchQueue.main.async {
+                self.isPendingOutsideChange = false
+            }
         }
+    }
+    
+    func setIslandViewChangeState(isChanging:Bool){
+        isTypeChanging = isChanging
     }
 
     func getNowIslandType() -> IslandType {
@@ -165,7 +180,7 @@ class IslandTypeManager: ObservableObject {
         }
         islandViewChangeQueue.removeFirst()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            self.OutsideChangeIslandType(outsideChange:first)
+            self.OutsideChangeIslandType(outsideChange:first, tofirst:true)
         }
     }
     

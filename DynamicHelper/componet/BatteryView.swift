@@ -17,6 +17,7 @@ struct BatteryView: View {
     @State private var level: CGFloat = 0
     @State private var timer: Timer?
     @State private var isHovering: Bool = false
+    @State private var isShowingChargingIcon: Bool = true
 
     var body: some View {
         HStack(spacing: 0) {
@@ -27,9 +28,14 @@ struct BatteryView: View {
             if(!isCharging && isPluggedIn){
                 Image(systemName: "powerplug.portrait.fill")
                     .foregroundStyle(.white)
+                    .opacity(isShowingChargingIcon ? 1 : 0)
             }else if(isCharging){
                 Image(systemName: "bolt.fill")
                     .foregroundStyle(.green)
+                    .opacity(isShowingChargingIcon ? 1 : 0)
+            }else if islandTypeManager.checkNowIslandTypeIs(.onCharge){
+                Image(systemName: "bolt.fill")
+                    .foregroundStyle(.black)
             }
         }
         .padding(10)
@@ -40,6 +46,14 @@ struct BatteryView: View {
         )
         .onAppear {
             startMonitoring()
+            if islandTypeManager.checkNowIslandTypeIs(.onCharge){
+                if isPluggedIn{
+                    isShowingChargingIcon = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        isShowingChargingIcon = true
+                    }
+                }
+            }
         }
         .onDisappear {
             stopMonitoring()
@@ -61,7 +75,7 @@ struct BatteryView: View {
 
     func startMonitoring() {
         updateBatteryInfo() // 立即更新一次
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
             updateBatteryInfo()
         }
     }
@@ -77,9 +91,6 @@ struct BatteryView: View {
             isCharging = info.isCharging
             isPluggedIn = info.isPluggedIn
             level = CGFloat(info.percentage) / 100.0
-            
-//            print(info)
-
         }
     }
 }
@@ -129,6 +140,9 @@ struct CustomBatteryView: View {
         return color
     }
 }
+
+
+//var powerMonitor: PowerMonitor = PowerMonitor()
 
 final class PowerMonitor {
     struct BatteryInfo {
@@ -223,4 +237,35 @@ final class PowerMonitor {
         NSWorkspace.shared.open(url)
     }
 
+}
+
+
+
+struct InputAnimation: View  {
+    @State var spacing: CGFloat = 0
+    var body: some View {
+        GeometryReader { geometry in
+            HStack(spacing: 10) {
+                Image(systemName: "cable.connector.horizontal")
+                    .foregroundStyle(.white)
+                    .font(.system(size: geometry.size.height))
+                    .offset(x:spacing)
+                HStack {
+                    Image("Magsafe")
+                        .resizable()
+                        .scaledToFit()
+                }.frame(width: geometry.size.height, height: geometry.size.height)
+            }
+        }
+        .clipped()
+        .onAppear {
+            guard let batteryInfo = PowerMonitor.getBatteryInfo() else { return }
+            self.spacing = batteryInfo.isPluggedIn ? 0 : 20
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(.easeInOut(duration: 1.0)) {
+                    self.spacing = batteryInfo.isPluggedIn ? 20 : 0
+                }
+            }
+        }
+    }
 }

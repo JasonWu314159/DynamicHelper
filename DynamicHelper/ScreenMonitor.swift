@@ -37,13 +37,17 @@ class ScreenMonitor {
         // 你也可以在這裡加上自動調整視窗或通知 AppDelegate 的邏輯
     }
     
-    func moveWindowToBuiltInDisplay(
+    func refreshWindowSize(
         window: NSWindow,
         winType:IslandTypeManager.IslandType = islandTypeManager.getNowIslandType()
     ) {
         var size = IslandTypeManager.getWindowSize(winType)
         let sizeDelta: CGFloat = IslandTypeManager.getWindowRadius(winType).up*2
         size.height += sizeDelta
+        refreshWindowSize(window: window, size:size)
+    }
+    
+    func refreshWindowSize(window: NSWindow,size: CGSize = islandTypeManager.getNowWindowSize()){
         let screen = getNowScreen()
         let frame = NSRect(
             origin: NSPoint(

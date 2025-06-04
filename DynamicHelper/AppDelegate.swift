@@ -59,9 +59,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func update(type: IslandTypeManager.IslandType) {
-        // 找出內建螢幕（即 MacBook 自帶的螢幕）
         guard let win = self.window else { return }
-        screenMonitor.moveWindowToBuiltInDisplay(window:win, winType: type)
+        screenMonitor.refreshWindowSize(window:win, winType: type)
+    }
+    
+    func update(size: CGSize) {
+        guard let win = self.window else { return }
+        screenMonitor.refreshWindowSize(window:win, size:size)
     }
     
     

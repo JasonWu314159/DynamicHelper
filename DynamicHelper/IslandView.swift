@@ -175,40 +175,38 @@ struct IslandView: View {
         if type == .hide && isPlayingGame{type = .gameMode}
         let hasnotch = IslandTypeManager.hasNotch
         isInAnimation = true
-        let size = IslandTypeManager.getWindowSize(type)
-        let radius = IslandTypeManager.getWindowRadius(type)
+        let LastTypeSize = islandTypeManager.getNowWindowSize()
+        let NewTypeSize = IslandTypeManager.getWindowSize(type)
+        let LastTypeRadius = islandTypeManager.getNowWindowRadius()
+        let NewTypeRadius = IslandTypeManager.getWindowRadius(type)
         if(!hasnotch && island.checkNowIslandTypeIs(.hide)){windowWidth=1;windowHeight=1}
         let isToSmall = IslandTypeManager.isIslandTypeToSmall(from: island.getNowIslandType(), to: type)
         let animateTime:CGFloat = 0.5 //isToBig ? 0.5 : 0.35
         withAnimation(.spring(response: isAnimated ? animateTime : 0, dampingFraction: 0.75)){
             if(!hasnotch && type == .hide){windowWidth=1}
-            else{windowWidth = size.width}
-            windowHeight = size.height
-            windowUpRadius = radius.up
-            windowDownRadius = radius.down
+            else{windowWidth = NewTypeSize.width}
+            windowHeight = NewTypeSize.height
+            windowUpRadius = NewTypeRadius.up
+            windowDownRadius = NewTypeRadius.down
             windowPosY = windowHeight/2+windowUpRadius/2
         }
+        var size = CGSize(width: max(LastTypeSize.width,NewTypeSize.width), height: max(LastTypeSize.height,NewTypeSize.height))
+        size.height += max(LastTypeRadius.up,NewTypeRadius.up)*2
+        appDelegate.update(size: size)
+        windowPosX = size.width/2
         if(isToSmall){
-            island.changeIslandType(.hide)
-            DispatchQueue.main.asyncAfter(deadline: .now() + animateTime+0.01) {
-                appDelegate.update(type: type)
-                windowPosX = size.width/2
-                isInAnimation = false
-                windowWidth = size.width
-                withAnimation{
-                    island.changeIslandType(type)
-                }
-            }
+            island.changeIslandType(type)
         }else{
-            appDelegate.update(type: type)
-            windowPosX = size.width/2
             withAnimation{
                 island.changeIslandType(type)
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + animateTime+0.01) {
-                island.changelastIslandType(type)
-            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + animateTime+0.01) {
+            appDelegate.update(type: type)
+            windowPosX = NewTypeSize.width/2
             isInAnimation = false
+            windowWidth = NewTypeSize.width
+            island.changelastIslandType(type)
         }
         island.resetOutsideChange()
     }

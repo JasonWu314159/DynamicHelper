@@ -107,6 +107,10 @@ class IslandTypeManager: ObservableObject {
         return (down, up)
     }
     
+    func getNowWindowRadius() -> (down:CGFloat, up:CGFloat) {
+        return IslandTypeManager.getWindowRadius(type)
+    }
+    
     func OutsideChangeIslandType(to:IslandType,Animate:Bool = true ,EnforceChange:Bool = false){
         OutsideChangeIslandType(outsideChange: outsideChangeInfo(type: to, animate: Animate, Enforce: EnforceChange))
     }

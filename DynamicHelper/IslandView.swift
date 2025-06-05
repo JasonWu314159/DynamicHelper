@@ -179,14 +179,13 @@ struct IslandView: View {
         island.setIslandViewChangeState(isChanging: true)
         let LastTypeSize = islandTypeManager.getNowWindowSize()
         let NewTypeSize = IslandTypeManager.getWindowSize(type)
-        let LastTypeRadius = islandTypeManager.getNowWindowRadius()
         let NewTypeRadius = IslandTypeManager.getWindowRadius(type)
         if(!hasnotch && island.checkNowIslandTypeIs(.hide)){windowWidth=1;windowHeight=1}
         let isToSmall = IslandTypeManager.isIslandTypeToSmall(from: island.getNowIslandType(), to: type)
         let isToBig = IslandTypeManager.isIslandTypeToBig(from: island.getNowIslandType(), to: type)
         let animateTime:CGFloat = isAnimated ? 0.5 : 0 
-        withAnimation(.spring(response: animateTime, dampingFraction: 0.75)){
-            if(!hasnotch && type == .hide){windowWidth=1}
+        withAnimation(.spring(response: animateTime, dampingFraction: isToBig ? 0.5 : 0.75)){
+            if(!hasnotch && type == .hide){windowWidth=NewTypeSize.width}
             else{windowWidth = NewTypeSize.width}
             windowHeight = NewTypeSize.height
             windowUpRadius = NewTypeRadius.up
@@ -194,7 +193,8 @@ struct IslandView: View {
             windowPosY = windowHeight/2+windowUpRadius/2
         }
         var size = CGSize(width: max(LastTypeSize.width,NewTypeSize.width), height: max(LastTypeSize.height,NewTypeSize.height))
-        size.height += max(LastTypeRadius.up,NewTypeRadius.up)*2
+        size.height *= 1.5
+        size.width *= 1.5
         appDelegate.update(size: size)
         windowPosX = size.width/2
         if(isToSmall || isToBig){
@@ -204,7 +204,7 @@ struct IslandView: View {
             island.changeIslandType(type)
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + animateTime) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + animateTime*(isToBig ? 1.5 : 1)) {
             appDelegate.update(type: type)
             windowPosX = NewTypeSize.width/2
             windowWidth = NewTypeSize.width

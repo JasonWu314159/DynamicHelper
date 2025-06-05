@@ -124,7 +124,7 @@ class IslandTypeManager: ObservableObject {
         guard !isPendingOutsideChange || isTypeChanging else {
             if tofirst{
                 islandViewChangeQueue.insert(OusideChangeInfo, at: 0)
-            }else if islandViewChangeQueue.count <= 1{
+            }else if islandViewChangeQueue.count < 1{
                 islandViewChangeQueue.append(OusideChangeInfo)
             }
             return

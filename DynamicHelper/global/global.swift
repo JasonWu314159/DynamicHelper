@@ -49,6 +49,7 @@ class ViewSpace: ObservableObject {
         }
 //        print(isHovering)
     }
+    
 }
 
 var AirDropViewSpace:ViewSpace = ViewSpace()
@@ -59,7 +60,8 @@ func getMousePoint() -> CGPoint {
     var mousePosition = NSEvent.mouseLocation
     let screen = getNowScreen()
     mousePosition.y = screen.frame.height - mousePosition.y + screen.frame.origin.y
-    mousePosition.x -= screen.frame.width/2 - islandTypeManager.getNowWindowSize().width/2 + screen.frame.origin.x
+    mousePosition.x = mousePosition.x - screen.frame.width/2 + islandTypeManager.getNowWindowSize().width/2 - screen.frame.origin.x
+    print(mousePosition)
     return mousePosition
 }
 

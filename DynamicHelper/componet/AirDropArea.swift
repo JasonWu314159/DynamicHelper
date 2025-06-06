@@ -9,6 +9,8 @@ import SwiftUI
 
 struct AirDropArea: View {
     @ObservedObject var airDropViewSpace = AirDropViewSpace
+    @State var isActive: Bool = false
+    
     var body: some View {
         GeometryReader { geo in
             ZStack{
@@ -28,10 +30,13 @@ struct AirDropArea: View {
             .padding()
             .frame(width: min(geo.size.width, geo.size.height))
             .onAppear {
-                AirDropViewSpace.frame = geo.frame(in: .global)
                 AirDropViewSpace.isHovering = false
+            }
+            .onChange(of: geo.frame(in: .global)) { 
+                AirDropViewSpace.frame = geo.frame(in: .global)
             }
         }
         .aspectRatio(1, contentMode: .fit)
     }
+    
 }

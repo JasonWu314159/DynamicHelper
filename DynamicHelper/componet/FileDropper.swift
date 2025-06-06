@@ -33,8 +33,10 @@ struct DroppableIslandView: View {
             .cornerRadius(30)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onAppear {
-                FileDropViewSpace.frame = geo.frame(in: .global)
                 FileDropViewSpace.isHovering = false
+            }
+            .onChange(of: geo.frame(in: .global)) { 
+                FileDropViewSpace.frame = geo.frame(in: .global)
             }
         }
     }

@@ -61,7 +61,7 @@ func getMousePoint() -> CGPoint {
     let screen = getNowScreen()
     mousePosition.y = screen.frame.height - mousePosition.y + screen.frame.origin.y
     mousePosition.x = mousePosition.x - screen.frame.width/2 + islandTypeManager.getNowWindowSize().width/2 - screen.frame.origin.x
-    print(mousePosition)
+//    print(mousePosition)
     return mousePosition
 }
 

@@ -6,8 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		966C14212DF5A19100FD1497 /* libIOReport.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 966C14202DF5A19100FD1497 /* libIOReport.tbd */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		966C13A52DF5A15C00FD1497 /* DynamicHelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DynamicHelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		966C14202DF5A19100FD1497 /* libIOReport.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libIOReport.tbd; path = usr/lib/libIOReport.tbd; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -23,6 +28,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				966C14212DF5A19100FD1497 /* libIOReport.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -33,6 +39,7 @@
 			isa = PBXGroup;
 			children = (
 				966C13A72DF5A15C00FD1497 /* DynamicHelper */,
+				966C141F2DF5A19100FD1497 /* Frameworks */,
 				966C13A62DF5A15C00FD1497 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -43,6 +50,14 @@
 				966C13A52DF5A15C00FD1497 /* DynamicHelper.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		966C141F2DF5A19100FD1497 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				966C14202DF5A19100FD1497 /* libIOReport.tbd */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -268,6 +283,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "DynamicHelper/DynamicHelper-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -295,6 +311,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "DynamicHelper/DynamicHelper-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;

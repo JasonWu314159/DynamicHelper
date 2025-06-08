@@ -1,0 +1,585 @@
+//
+//  reader.swift
+//  CPU
+//
+//  Created by Serhiy Mytrovtsiy on 17/08/2020.
+//  Using Swift 5.0.
+//  Running on macOS 10.15.
+//
+//  Copyright © 2020 Serhiy Mytrovtsiy. All rights reserved.
+//
+import Cocoa
+import WidgetKit
+
+public struct CPU_Load: Codable {
+    var totalUsage: Double = 0
+    var usagePerCore: [Double] = []
+    var usageECores: Double? = nil
+    var usagePCores: Double? = nil
+    
+    var systemLoad: Double = 0
+    var userLoad: Double = 0
+    var idleLoad: Double = 0
+    
+    public func remote() -> Data? {
+        var string = "1,1,\(self.totalUsage),\(self.usagePerCore.count),"
+        for c in self.usagePerCore {
+            string += "\(c),"
+        }
+        string += "$"
+        return string.data(using: .utf8)
+    }
+}
+
+public struct CPU_Frequency: Codable {
+    var value: Double = 0
+    var eCore: Double = 0
+    var pCore: Double = 0
+    
+    public func remote() -> Data? {
+        let string = "1,1,\(self.value)$"
+        return string.data(using: .utf8)
+    }
+}
+
+public struct CPU_Limit: Codable {
+    var scheduler: Int = 0
+    var cpus: Int = 0
+    var speed: Int = 0
+}
+
+
+
+class CPULoadReader {
+    static let shared:CPULoadReader = CPULoadReader()
+    
+    private var cpuInfo: processor_info_array_t!
+    private var prevCpuInfo: processor_info_array_t?
+    private var numCpuInfo: mach_msg_type_number_t = 0
+    private var numPrevCpuInfo: mach_msg_type_number_t = 0
+    private var numCPUs: uint = 0
+    private let CPUUsageLock: NSLock = NSLock()
+    private var previousInfo = host_cpu_load_info()
+    private var hasHyperthreadingCores = false
+    
+    private var response: CPU_Load = CPU_Load()
+    private var numCPUsU: natural_t = 0
+    private var usagePerCore: [Double] = []
+    private var cores: [core_s]? = nil
+    
+    init(){
+        setup()
+    }
+    
+    public func setup() {
+        self.hasHyperthreadingCores = sysctlByName("hw.physicalcpu") != sysctlByName("hw.logicalcpu")
+        [CTL_HW, HW_NCPU].withUnsafeBufferPointer { mib in
+            var sizeOfNumCPUs: size_t = MemoryLayout<uint>.size
+            let status = sysctl(processor_info_array_t(mutating: mib.baseAddress), 2, &numCPUs, &sizeOfNumCPUs, nil, 0)
+            if status != 0 {
+                self.numCPUs = 1
+            }
+        }
+        self.cores = SystemKit.shared.device.info.cpu?.cores
+    }
+    
+    public func read() -> CPU_Load? {
+        let result: kern_return_t = host_processor_info(mach_host_self(), PROCESSOR_CPU_LOAD_INFO, &self.numCPUsU, &self.cpuInfo, &self.numCpuInfo)
+        if result == KERN_SUCCESS {
+            self.CPUUsageLock.lock()
+            self.usagePerCore = []
+            
+            for i in 0 ..< Int32(numCPUs) {
+                var inUse: Int32
+                var total: Int32
+                if let prevCpuInfo = self.prevCpuInfo {
+                    inUse = self.cpuInfo[Int(CPU_STATE_MAX * i + CPU_STATE_USER)]
+                        - prevCpuInfo[Int(CPU_STATE_MAX * i + CPU_STATE_USER)]
+                        + self.cpuInfo[Int(CPU_STATE_MAX * i + CPU_STATE_SYSTEM)]
+                        - prevCpuInfo[Int(CPU_STATE_MAX * i + CPU_STATE_SYSTEM)]
+                        + self.cpuInfo[Int(CPU_STATE_MAX * i + CPU_STATE_NICE)]
+                        - prevCpuInfo[Int(CPU_STATE_MAX * i + CPU_STATE_NICE)]
+                    total = inUse + (self.cpuInfo[Int(CPU_STATE_MAX * i + CPU_STATE_IDLE)]
+                        - prevCpuInfo[Int(CPU_STATE_MAX * i + CPU_STATE_IDLE)])
+                } else {
+                    inUse = self.cpuInfo[Int(CPU_STATE_MAX * i + CPU_STATE_USER)]
+                        + self.cpuInfo[Int(CPU_STATE_MAX * i + CPU_STATE_SYSTEM)]
+                        + self.cpuInfo[Int(CPU_STATE_MAX * i + CPU_STATE_NICE)]
+                    total = inUse + self.cpuInfo[Int(CPU_STATE_MAX * i + CPU_STATE_IDLE)]
+                }
+                
+                if total != 0 {
+                    self.usagePerCore.append(Double(inUse) / Double(total))
+                }
+            }
+            self.CPUUsageLock.unlock()
+            
+            self.response.usagePerCore = self.usagePerCore
+            
+            if let prevCpuInfo = self.prevCpuInfo {
+                let prevCpuInfoSize: size_t = MemoryLayout<integer_t>.stride * Int(self.numPrevCpuInfo)
+                vm_deallocate(mach_task_self_, vm_address_t(bitPattern: prevCpuInfo), vm_size_t(prevCpuInfoSize))
+            }
+            
+            self.prevCpuInfo = self.cpuInfo
+            self.numPrevCpuInfo = self.numCpuInfo
+            
+            self.cpuInfo = nil
+            self.numCpuInfo = 0
+        } else {
+            error("host_processor_info(): \(String(cString: mach_error_string(result), encoding: String.Encoding.ascii) ?? "unknown error")")
+        }
+        
+        let cpuInfo = hostCPULoadInfo()
+        if cpuInfo == nil {
+            
+            return nil
+        }
+        
+        let userDiff = Double(cpuInfo!.cpu_ticks.0 - self.previousInfo.cpu_ticks.0)
+        let sysDiff  = Double(cpuInfo!.cpu_ticks.1 - self.previousInfo.cpu_ticks.1)
+        let idleDiff = Double(cpuInfo!.cpu_ticks.2 - self.previousInfo.cpu_ticks.2)
+        let niceDiff = Double(cpuInfo!.cpu_ticks.3 - self.previousInfo.cpu_ticks.3)
+        let totalTicks = sysDiff + userDiff + niceDiff + idleDiff
+        
+        let system = sysDiff  / totalTicks
+        let user = userDiff  / totalTicks
+        let idle = idleDiff  / totalTicks
+        
+        if !system.isNaN {
+            self.response.systemLoad  = system
+        }
+        if !user.isNaN {
+            self.response.userLoad = user
+        }
+        if !idle.isNaN {
+            self.response.idleLoad = idle
+        }
+        self.previousInfo = cpuInfo!
+        self.response.totalUsage = self.response.systemLoad + self.response.userLoad
+        
+        if let cores = self.cores {
+            let eCoresList: [Double] = cores.filter({ $0.type == .efficiency }).compactMap { (c: core_s) in
+                if self.response.usagePerCore.indices.contains(Int(c.id)) {
+                    return self.response.usagePerCore[Int(c.id)]
+                }
+                return 0
+            }
+            let pCoresList: [Double] = cores.filter({ $0.type == .performance }).compactMap { (c: core_s) in
+                if self.response.usagePerCore.indices.contains(Int(c.id)) {
+                    return self.response.usagePerCore[Int(c.id)]
+                }
+                return 0
+            }
+            
+            self.response.usageECores = eCoresList.reduce(0, +)/Double(eCoresList.count)
+            self.response.usagePCores = pCoresList.reduce(0, +)/Double(pCoresList.count)
+        }
+//        print(self.response)
+//        self.callback(self.response)
+        return self.response
+    }
+    
+    private func hostCPULoadInfo() -> host_cpu_load_info? {
+        let count = MemoryLayout<host_cpu_load_info>.stride/MemoryLayout<integer_t>.stride
+        var size = mach_msg_type_number_t(count)
+        var cpuLoadInfo = host_cpu_load_info()
+        
+        let result: kern_return_t = withUnsafeMutablePointer(to: &cpuLoadInfo) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: count) {
+                host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO, $0, &size)
+            }
+        }
+        if result != KERN_SUCCESS {
+            error("kern_result_t: \(result)")
+            return nil
+        }
+        
+        return cpuLoadInfo
+    }
+}
+
+
+public class TemperatureReader {
+    static let shared = TemperatureReader()
+    
+    var list: [String] = []
+    var Temperature:Double? = nil
+    
+    init(){
+        setup()
+    }
+    
+    public func setup() {
+        switch SystemKit.shared.device.platform {
+        case .m1, .m1Pro, .m1Max, .m1Ultra:
+            self.list = ["Tp09", "Tp0T", "Tp01", "Tp05", "Tp0D", "Tp0H", "Tp0L", "Tp0P", "Tp0X", "Tp0b"]
+        case .m2, .m2Pro, .m2Max, .m2Ultra:
+        self.list = ["Tp1h", "Tp1t", "Tp1p", "Tp1l", "Tp01", "Tp05", "Tp09", "Tp0D", "Tp0X", "Tp0b", "Tp0f", "Tp0j"]
+        case .m3, .m3Pro, .m3Max, .m3Ultra:
+            self.list = ["Te05", "Te0L", "Te0P", "Te0S", "Tf04", "Tf09", "Tf0A", "Tf0B", "Tf0D", "Tf0E", "Tf44", "Tf49", "Tf4A", "Tf4B", "Tf4D", "Tf4E"]
+        case .m4, .m4Pro, .m4Max, .m4Ultra:
+            self.list = ["Te05", "Te09", "Te0H", "Te0S", "Tp01", "Tp05", "Tp09", "Tp0D", "Tp0V", "Tp0Y", "Tp0b", "Tp0e"]
+        default: break
+        }
+    }
+    
+    public func read() -> Double?{
+        var temperature: Double? = nil
+        
+        if let value = SMC.shared.getValue("TC0D"), value < 110 {
+            temperature = value
+        } else if let value = SMC.shared.getValue("TC0E"), value < 110 {
+            temperature = value
+        } else if let value = SMC.shared.getValue("TC0F"), value < 110 {
+            temperature = value
+        } else if let value = SMC.shared.getValue("TC0P"), value < 110 {
+            temperature = value
+        } else if let value = SMC.shared.getValue("TC0H"), value < 110 {
+            temperature = value
+        } else {
+            var total: Double = 0
+            var counter: Double = 0
+            self.list.forEach { (key: String) in
+                if let value = SMC.shared.getValue(key) {
+                    total += value
+                    counter += 1
+                }
+            }
+            if total != 0 && counter != 0 {
+                temperature = total / counter
+            }
+        }
+        
+        self.Temperature = temperature
+        print(self.Temperature)
+        return self.Temperature
+    }
+}
+
+// inspired by https://github.com/shank03/StatsBar/blob/e175aa71c914ce882ce2e90163f3eb18262a8e25/StatsBar/Service/IOReport.swift
+public class FrequencyReader{
+    static let shared = FrequencyReader()
+    
+    private var eCoreFreqs: [Int32] = []
+    private var pCoreFreqs: [Int32] = []
+    private var eCoreCount: Double = 0
+    private var pCoreCount: Double = 0
+    
+    private var channels: CFMutableDictionary? = nil
+    private var subscription: IOReportSubscriptionRef? = nil
+    private var prev: (samples: CFDictionary, time: TimeInterval)? = nil
+    
+    private let measurementCount: Int = 4
+    private let isReadingQueue = DispatchQueue(label: "com.example.isReadingQueue")
+    private var CPUFrequency:CPU_Frequency = CPU_Frequency()
+    
+    private var _isReading: Bool = false
+    private var isReading: Bool {
+        get { self.isReadingQueue.sync { self._isReading } }
+        set { self.isReadingQueue.sync { self._isReading = newValue } }
+    }
+    
+    private struct IOSample {
+        let group: String
+        let subGroup: String
+        let channel: String
+        let unit: String
+        let delta: CFDictionary
+    }
+    
+    init(){
+        setup()
+    }
+    
+    public func setup() {
+        self.eCoreFreqs = SystemKit.shared.device.info.cpu?.eCoreFrequencies ?? []
+        self.pCoreFreqs = SystemKit.shared.device.info.cpu?.pCoreFrequencies ?? []
+        self.eCoreCount = Double(SystemKit.shared.device.info.cpu?.eCores ?? 0)
+        self.pCoreCount = Double(SystemKit.shared.device.info.cpu?.pCores ?? 0)
+        self.channels = self.getChannels()
+        var dict: Unmanaged<CFMutableDictionary>?
+        self.subscription = IOReportCreateSubscription(nil, self.channels, &dict, 0, nil)
+        dict?.release()
+    }
+    
+    public func read() async -> CPU_Frequency? {
+        guard !self.isReading, !self.eCoreFreqs.isEmpty && !self.pCoreFreqs.isEmpty, self.channels != nil, self.subscription != nil else { return nil }
+        self.isReading = true
+        let minECoreFreq = Double(self.eCoreFreqs.min() ?? 0)
+        let minPCoreFreq = Double(self.pCoreFreqs.min() ?? 0)
+        
+        Task {
+            var eCores: [Double] = []
+            var pCores: [Double] = []
+            let samplesList = await self.getSamples()
+            
+            for (samples, _) in samplesList {
+                var eCore: [Double] = []
+                var pCore: [Double] = []
+                for sample in samples {
+                    guard sample.group == "CPU Stats" else { continue }
+                    if sample.channel.starts(with: "ECPU") {
+                        eCore.append(self.calculateFrequencies(dict: sample.delta, freqs: self.eCoreFreqs))
+                    }
+                    if sample.channel.starts(with: "PCPU") {
+                        pCore.append(self.calculateFrequencies(dict: sample.delta, freqs: self.pCoreFreqs))
+                    }
+                }
+                
+                let eCoresAvgFreq: Double = eCore.isEmpty ? 0 : (eCore.reduce(0.0, { $0 + $1 }) / Double(eCore.count))
+                let pCoresAvgFreq: Double = pCore.isEmpty ? 0 : (pCore.reduce(0.0, { $0 + $1 }) / Double(pCore.count))
+                eCores.append(max(eCoresAvgFreq, minECoreFreq))
+                pCores.append(max(pCoresAvgFreq, minPCoreFreq))
+            }
+            
+            let eFreq: Double = eCores.reduce(0, { $0 + $1 }) / Double(self.measurementCount)
+            let pFreq: Double = pCores.reduce(0, { $0 + $1 }) / Double(self.measurementCount)
+            let value: Double = ((eFreq * self.eCoreCount) + (pFreq * self.pCoreCount)) / (self.eCoreCount + self.pCoreCount)
+            
+            self.CPUFrequency = CPU_Frequency(value: value, eCore: eFreq, pCore: pFreq)
+            self.isReading = false
+            print(self.CPUFrequency)
+            return self.CPUFrequency
+        }
+        return nil
+    }
+    
+    private func calculateFrequencies(dict: CFDictionary, freqs: [Int32]) -> Double {
+        let items = self.getResidencies(dict: dict)
+        guard let offset = items.firstIndex(where: { $0.0 != "IDLE" && $0.0 != "DOWN" && $0.0 != "OFF" }) else { return 0 }
+        let usage = items.dropFirst(offset).reduce(0.0) { $0 + Double($1.f) }
+        let count = freqs.count
+        var avgFreq: Double = 0
+        
+        for i in 0..<count {
+            let key = i + offset
+            if !items.indices.contains(key) { continue }
+            let percent = usage == 0 ? 0 : Double(items[key].f) / usage
+            avgFreq += percent * Double(freqs[i])
+        }
+        
+        return avgFreq
+    }
+    
+    func getResidencies(dict: CFDictionary) -> [(ns: String, f: Int64)] {
+        let count = IOReportStateGetCount(dict)
+        var res: [(String, Int64)] = []
+        
+        for i in 0..<count {
+            let name = IOReportStateGetNameForIndex(dict, i)?.takeUnretainedValue() ?? ("" as CFString)
+            let val = IOReportStateGetResidency(dict, i)
+            res.append((name as String, val))
+        }
+        
+        return res
+    }
+    
+    private func getChannels() -> CFMutableDictionary? {
+        let channelNames = [
+            ("CPU Stats", "CPU Complex Performance States"),
+            ("CPU Stats", "CPU Core Performance States")
+        ]
+        
+        var channels: [CFDictionary] = []
+        for (gname, sname) in channelNames {
+            let channel = IOReportCopyChannelsInGroup(gname as CFString?, sname as CFString?, 0, 0, 0)
+            guard let channel = channel?.takeRetainedValue() else { continue }
+            channels.append(channel)
+        }
+        
+        let chan = channels[0]
+        for i in 1..<channels.count {
+            IOReportMergeChannels(chan, channels[i], nil)
+        }
+        
+        let size = CFDictionaryGetCount(chan)
+        guard let channel = CFDictionaryCreateMutableCopy(kCFAllocatorDefault, size, chan),
+              let chan = channel as? [String: Any], chan["IOReportChannels"] != nil else {
+            return nil
+        }
+        
+        return channel
+    }
+    
+    private func getSamples() async -> [([IOSample], TimeInterval)] {
+        let duration = 500
+        let step = UInt64(duration / self.measurementCount)
+        var samples = [([IOSample], TimeInterval)]()
+        guard let initialSample = self.getSample() else { return samples }
+        var prev = self.prev ?? initialSample
+        
+        for _ in 0..<self.measurementCount {
+            let milliseconds = UInt64(step) * 1_000_000
+            do {
+                try await Task.sleep(nanoseconds: milliseconds)
+            } catch {
+                if Task.isCancelled { return [] }
+                continue
+            }
+            
+            guard let next = self.getSample() else { continue }
+            
+            if let diffCF = IOReportCreateSamplesDelta(prev.samples, next.samples, nil) {
+                let diff = diffCF.takeRetainedValue()
+                let elapsed = next.time - prev.time
+                samples.append((self.collectIOSamples(data: diff), max(elapsed, TimeInterval(1))))
+            }
+            prev = next
+        }
+        
+        self.prev = prev
+        return samples
+    }
+    
+    private func getSample() -> (samples: CFDictionary, time: TimeInterval)? {
+        guard let sample = IOReportCreateSamples(self.subscription, self.channels, nil)?.takeRetainedValue() else {
+            return nil
+        }
+        return (sample, Date().timeIntervalSince1970)
+    }
+    
+    private func collectIOSamples(data: CFDictionary) -> [IOSample] {
+        let dict = data as! [String: Any]
+        let items = dict["IOReportChannels"] as! CFArray
+        let itemSize = CFArrayGetCount(items)
+        
+        var samples = [IOSample]()
+        
+        for index in 0..<itemSize {
+            let dict = CFArrayGetValueAtIndex(items, index)
+            let item = unsafeBitCast(dict, to: CFDictionary.self)
+            
+            let group = IOReportChannelGetGroup(item)?.takeUnretainedValue() ?? ("" as CFString)
+            let subGroup = IOReportChannelGetSubGroup(item)?.takeUnretainedValue() ?? ("" as CFString)
+            let channel = IOReportChannelGetChannelName(item)?.takeUnretainedValue() ?? ("" as CFString)
+            let unit = IOReportChannelGetUnitLabel(item)?.takeUnretainedValue() ?? ("" as CFString)
+            
+            samples.append(IOSample(group: group as String, subGroup: subGroup as String, channel: channel as String, unit: unit as String, delta: item))
+        }
+        
+        return samples
+    }
+}
+
+
+public class AverageReader {
+    private let title: String = "CPU"
+    private var list: [Double] = []
+    
+//    public override func setup() {
+//        self.setInterval(60)
+//    }
+    
+    public func read()->[Double] {
+        let task = Process()
+        task.launchPath = "/usr/bin/uptime"
+        
+        let outputPipe = Pipe()
+        defer {
+            outputPipe.fileHandleForReading.closeFile()
+        }
+        task.standardOutput = outputPipe
+        
+        do {
+            try task.run()
+        } catch let err {
+            error("error read uptime: \(err.localizedDescription)")
+            return []
+        }
+        
+        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        guard let raw = String(data: outputData, encoding: .utf8), let line = raw.split(separator: "\n").first else {
+            return []
+        }
+        
+        let str = line.trimmingCharacters(in: .whitespaces)
+        let strFind = str.findAndCrop(pattern: "(\\d+(.|,)\\d+ *){3}$")
+        let strArr = strFind.cropped.split(separator: " ")
+        guard strArr.count == 3 else {
+            return []
+        }
+        
+        var list: [Double] = []
+        strArr.forEach { (n: Substring) in
+            let value = Double(n.replacingOccurrences(of: ",", with: ".")) ?? 0
+            list.append(value)
+        }
+        
+        self.list = list
+        print(self.list)
+        return list
+    }
+}
+
+public class CPUProcessReader {
+    static let shared = CPUProcessReader()
+    
+    private let title: String = "CPU"
+    
+    private var numberOfProcesses: Int {
+        get { 8 }
+    }
+    
+    public func read() -> [TopProcess]{
+        if self.numberOfProcesses == 0 {
+            return []
+        }
+        
+        let task = Process()
+        task.launchPath = "/bin/ps"
+        task.arguments = ["-Aceo pid,pcpu,comm", "-r"]
+        
+        let outputPipe = Pipe()
+        let errorPipe = Pipe()
+        
+        defer {
+            outputPipe.fileHandleForReading.closeFile()
+            errorPipe.fileHandleForReading.closeFile()
+        }
+        
+        task.standardOutput = outputPipe
+        task.standardError = errorPipe
+        
+        do {
+            try task.run()
+        } catch let err {
+            error("error read ps: \(err.localizedDescription)")
+            return []
+        }
+        
+        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+        let output = String(data: outputData, encoding: .utf8)
+        _ = String(data: errorData, encoding: .utf8)
+        guard let output, !output.isEmpty else { return [] }
+        
+        var index = 0
+        var processes: [TopProcess] = []
+        output.enumerateLines { (line, stop) in
+            if index != 0 {
+                let str = line.trimmingCharacters(in: .whitespaces)
+                let pidFind = str.findAndCrop(pattern: "^\\d+")
+                let usageFind = pidFind.remain.findAndCrop(pattern: "^[0-9,.]+ ")
+                let command = usageFind.remain.trimmingCharacters(in: .whitespaces)
+                let pid = Int(pidFind.cropped) ?? 0
+                let usage = Double(usageFind.cropped.replacingOccurrences(of: ",", with: ".")) ?? 0
+                
+                var name: String = command
+                if let app = NSRunningApplication(processIdentifier: pid_t(pid)), let n = app.localizedName {
+                    name = n
+                }
+                
+                processes.append(TopProcess(pid: pid, name: name, usage: usage))
+            }
+            
+            if index == self.numberOfProcesses { stop = true }
+            index += 1
+        }
+        
+//        self.callback(processes)
+//        print(processes)
+        return processes
+    }
+}
+

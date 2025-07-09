@@ -24,17 +24,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        
-//        CPULoadReader.share.read()
-//        TemperatureReader.shared.read()
-//        FrequencyReader.shared.read()
-//        GPUsInfoReader.shared.read()
-//        SensorsReader.shared.read()
-//        BatteryMonitor.shared.read()
-//        RAMStateMonitor.shared.read()
-//        NetStateMonitor.shared.read()
-//        
-//        exit(0)
         getSettings()
         islandView = IslandView(hoverState: hoverState,appDelegate: self)
 //            .environmentObject(windowState) as! IslandView as IslandView

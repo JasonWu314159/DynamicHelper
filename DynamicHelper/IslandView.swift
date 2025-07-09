@@ -148,7 +148,7 @@ struct IslandView: View {
                             FileDropViewSpace.isHovering = false
                         }
                     }
-                    return handleDrop(providers: providers)
+                    return fileStorage.handleDrop(providers: providers, airDropViewSpace: AirDropViewSpace)
                 }
             }
             .position(x: windowPosX,y: windowPosY)

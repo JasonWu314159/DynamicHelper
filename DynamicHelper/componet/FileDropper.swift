@@ -67,7 +67,7 @@ struct FileContainerView: View {
 
 
 struct FileInfoView: View  {
-    let file:FileEntry
+    let file: FileStorage.FileEntry
     @ObservedObject var storedFiles:FileStorage
     @State private var isHovered: Bool = false
     var body: some View {

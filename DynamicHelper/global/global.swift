@@ -68,3 +68,4 @@ func getMousePoint() -> CGPoint {
 var isCharging:Bool = false
 
 
+let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!

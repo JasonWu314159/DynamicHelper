@@ -104,6 +104,8 @@ struct IslandView: View {
                                     .frame(maxHeight: .infinity)
                             }
                             .padding(.vertical,5)
+                        case .RemoteControl:
+                            RemoteControlHint()
                         default:
                             EmptyView()
                             

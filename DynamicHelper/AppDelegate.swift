@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Carbon.HIToolbox
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var window: NSWindow!
@@ -22,6 +23,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     var screenMonitor: ScreenMonitor!
     
+    
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         getSettings()
@@ -29,6 +31,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 //            .environmentObject(windowState) as! IslandView as IslandView
         powerMonitor = PowerMonitor()
         screenMonitor = ScreenMonitor(self)
+        SetShortCutKey()
         
         let hostView = NSHostingView(rootView: islandView)
         let contentSize = hostView.fittingSize // 取得實際尺寸
@@ -115,6 +118,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationWillTerminate(_ notification: Notification) {
         screenMonitor = nil // 自動 deinit 時會 removeObserver
+    }
+    
+    
+    func SetShortCutKey() {
+        HotKeyManager.shared.registerHotKey(
+            keyCode: UInt32(kVK_ANSI_U),
+            modifiers: UInt32(cmdKey | optionKey | controlKey)
+        ) {
+            print("✅ 快捷鍵 Cmd+Option+Control+U 被觸發")
+            RemoteInputInterceptor.shared.startFoundOtherComputer()
+        }
     }
 }
 

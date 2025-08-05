@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9608965F2E3C695800263E9E /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 9608965E2E3C695800263E9E /* LaunchAtLogin */; };
 		966C14212DF5A19100FD1497 /* libIOReport.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 966C14202DF5A19100FD1497 /* libIOReport.tbd */; };
 /* End PBXBuildFile section */
 
@@ -28,6 +29,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9608965F2E3C695800263E9E /* LaunchAtLogin in Frameworks */,
 				966C14212DF5A19100FD1497 /* libIOReport.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -80,6 +82,7 @@
 			);
 			name = DynamicHelper;
 			packageProductDependencies = (
+				9608965E2E3C695800263E9E /* LaunchAtLogin */,
 			);
 			productName = DynamicHelper;
 			productReference = 966C13A52DF5A15C00FD1497 /* DynamicHelper.app */;
@@ -109,6 +112,9 @@
 			);
 			mainGroup = 966C139C2DF5A15C00FD1497;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				9608965D2E3C695800263E9E /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 966C13A62DF5A15C00FD1497 /* Products */;
 			projectDirPath = "";
@@ -342,6 +348,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		9608965D2E3C695800263E9E /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/LaunchAtLogin-Modern";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		9608965E2E3C695800263E9E /* LaunchAtLogin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9608965D2E3C695800263E9E /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */;
+			productName = LaunchAtLogin;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 966C139D2DF5A15C00FD1497 /* Project object */;
 }

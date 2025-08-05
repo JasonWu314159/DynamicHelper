@@ -8,6 +8,7 @@
 import SwiftUI
 import AppKit
 import CoreGraphics
+import LaunchAtLogin
 
 struct ScreenInfo:Identifiable, Hashable {
     let id = UUID()
@@ -99,6 +100,12 @@ struct SettingsBody: View {
                         islandTypeManager.OutsideChangeIslandType(to: .hide,EnforceChange: true)
                     }
                     .frame(width: 150)
+                }
+                Spacer()
+                HStack{
+                    Text("登入時啟動")
+                    Spacer()
+                    LaunchAtLogin.Toggle("")
                 }
                 
             }

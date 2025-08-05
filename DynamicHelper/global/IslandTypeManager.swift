@@ -20,12 +20,14 @@ class IslandTypeManager: ObservableObject {
         case Clock
         case Hardware
         case ForceFocus
+        case RemoteControl
         
         var level: Int {
             switch self {
-            case .onCharge, .gameMode: return 1
-            case .exten, .Drop, .Clock, .Hardware: return 2
-            case .ForceFocus: return 3
+            case .onCharge, .RemoteControl: return 1
+            case .gameMode: return 2
+            case .exten, .Drop, .Clock, .Hardware: return 3
+            case .ForceFocus: return 4
             default: return 0
             }
         }
@@ -34,6 +36,7 @@ class IslandTypeManager: ObservableObject {
     static private let WindowSize:[IslandType:(width:CGFloat,height:CGFloat,downRadius:CGFloat,upRadius:CGFloat)] = [
         .hide:(width:0,height:0,downRadius:11,upRadius:6),
         .onCharge:(width:210,height:1,downRadius:11,upRadius:6),
+        .RemoteControl:(width:210,height:1,downRadius:11,upRadius:6),
         .gameMode:(width:300,height:1,downRadius:11,upRadius:6),
         .exten:(width:410,height:168,downRadius:25,upRadius:20),
         .Drop:(width:410,height:168,downRadius:25,upRadius:20),

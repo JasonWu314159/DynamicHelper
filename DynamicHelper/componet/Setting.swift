@@ -195,6 +195,51 @@ func getSettings() {
 }
 
 
+extension AppDelegate {
+    func showSettingsWindow() {
+        if settingsWindow == nil {
+            let size: CGSize = .init(width: 500, height: 200)
+            let origin: CGPoint = .init(x: (NSScreen.main?.frame.width ?? 0) / 2 - size.width / 2,
+                                        y: (NSScreen.main?.frame.height ?? 0) / 2 - size.height / 2)
+            
+            let window = NSWindow(
+                contentRect: NSRect(origin: origin, size: size),
+                styleMask: [.titled, .closable],
+                backing: .buffered,
+                defer: false)
+            
+            window.title = "設定"
+            window.level = NSWindow.Level(rawValue: 200)//min:102 max:500
+            window.isReleasedWhenClosed = false
+            window.contentView = NSHostingView(rootView: SettingsView())
+            settingsWindowDelegate = SettingsWindowDelegate(appDelegate: self)
+            window.delegate = settingsWindowDelegate
+            window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary,.stationary]
+            
+            settingsWindow = window
+        }
+        
+        settingsWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+    
+}
+
+
+final class SettingsWindowDelegate: NSObject, NSWindowDelegate {
+    var appDelegate: AppDelegate?
+
+    init(appDelegate: AppDelegate) {
+        self.appDelegate = appDelegate
+    }
+
+    func windowWillClose(_ notification: Notification) {
+        appDelegate?.settingsWindow = nil
+        saveSettings()
+    }
+}
+
+
 
 //#Preview {
 //    SettingsView()

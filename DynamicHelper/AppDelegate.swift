@@ -11,13 +11,15 @@ import Carbon.HIToolbox
 class AppDelegate: NSObject, NSApplicationDelegate {
     var window: NSWindow!
     var settingsWindow: NSWindow?
+    var RemoteControlChooseWindow: NSWindow?
     var space = CGSSpace(level: Int(INT_MAX))
-    private var settingsWindowDelegate: SettingsWindowDelegate?
+    var settingsWindowDelegate: SettingsWindowDelegate!
     var powerMonitor: PowerMonitor?
     
     var islandView: IslandView!
     let hoverState = HoverState()
-    var delegate:SettingsWindowDelegate!
+    var remoteControlChooseWindowDelegate:RemoteControlChooseWindowDelegate!
+    var isProgrammaticallyClosingRemoteControlWindow = false
     var keepAliveTimer: Timer?
     var keepAliveActivity: NSObjectProtocol?
     
@@ -89,59 +91,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
-    func showSettingsWindow() {
-        if settingsWindow == nil {
-            let size: CGSize = .init(width: 500, height: 200)
-            let origin: CGPoint = .init(x: (NSScreen.main?.frame.width ?? 0) / 2 - size.width / 2,
-                                        y: (NSScreen.main?.frame.height ?? 0) / 2 - size.height / 2)
-            
-            let window = NSWindow(
-                contentRect: NSRect(origin: origin, size: size),
-                styleMask: [.titled, .closable],
-                backing: .buffered,
-                defer: false)
-            
-            window.title = "設定"
-            window.level = NSWindow.Level(rawValue: 200)//min:102 max:500
-            window.isReleasedWhenClosed = false
-            window.contentView = NSHostingView(rootView: SettingsView())
-            delegate = SettingsWindowDelegate(appDelegate: self)
-            window.delegate = delegate
-            window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary,.stationary]
-            
-            settingsWindow = window
-        }
-        
-        settingsWindow?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-    }
-    
     func applicationWillTerminate(_ notification: Notification) {
         screenMonitor = nil // 自動 deinit 時會 removeObserver
     }
     
     
-    func SetShortCutKey() {
-        HotKeyManager.shared.registerHotKey(
-            keyCode: UInt32(kVK_ANSI_U),
-            modifiers: UInt32(cmdKey | optionKey | controlKey)
-        ) {
-            print("✅ 快捷鍵 Cmd+Option+Control+U 被觸發")
-            RemoteInputInterceptor.shared.startFoundOtherComputer()
-        }
-    }
 }
 
 
-final class SettingsWindowDelegate: NSObject, NSWindowDelegate {
-    var appDelegate: AppDelegate?
-
-    init(appDelegate: AppDelegate) {
-        self.appDelegate = appDelegate
-    }
-
-    func windowWillClose(_ notification: Notification) {
-        appDelegate?.settingsWindow = nil
-        saveSettings()
-    }
-}

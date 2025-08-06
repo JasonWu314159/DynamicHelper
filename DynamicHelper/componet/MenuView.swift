@@ -26,7 +26,7 @@ struct MenuView: View {
                 .frame(minWidth: 32 , maxHeight: 32)
             //Spacer(minLength: getWindowSize(.hide).width*Resize)
             Spacer()
-            MenuItemButton(systemName: "desktopcomputer.and.macbook",onTap: {}, width: 35)
+            MenuItemButton(systemName: "desktopcomputer.and.macbook",onTap: {appDelegate.showRemoteControlChooseWindow()}, width: 35)
                 .frame(width: 35 , height: 32)
             
             MenuItemButton(

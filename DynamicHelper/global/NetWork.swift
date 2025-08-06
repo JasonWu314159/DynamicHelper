@@ -7,6 +7,7 @@
 
 import Foundation
 import SystemConfiguration
+import AppKit
 
 class UDPBroadcaster: NSObject {
     private var timer: Timer?
@@ -17,7 +18,7 @@ class UDPBroadcaster: NSObject {
         message = m
     }
 
-    func startBroadcasting(interval: TimeInterval = 0.5) {
+    func startBroadcasting(interval: TimeInterval = RemoteInputInterceptor.DetectionInterval) {
         stopBroadcasting()
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
             self.sendBroadcast(message: self.message,port: self.port)
@@ -72,13 +73,32 @@ class SocketServer {
     struct ClientInfo: Hashable {
         let ip: String
         let port: Int
+        var name: String = ""
+        var os: String = ""
+        let fd: Int32
+        
+        init(ip:String,port:Int, fd:Int32){
+            self.ip = ip
+            self.port = port
+            self.name = ""
+            self.os = ""
+            self.fd = fd
+        }
+        
+        mutating func setName(_ name: String){
+            self.name = name
+        }
+        
+        mutating func setOS(_ os: String){
+            self.os = os
+        }
     }
     
     private let port: UInt16
     private var socketFD: Int32 = -1
     private var isRunning = false
 
-    private var connectedClients: [ClientInfo: Int32] = [:]
+    public private(set) var connectedClients: [Int32 : ClientInfo] = [:]
     private let lock = NSLock()
 
     init(port: UInt16 = 59620) {
@@ -93,6 +113,26 @@ class SocketServer {
     
     func getConnectedClientsAmout() -> Int {
         connectedClients.count
+    }
+    
+    func isAlive(info: ClientInfo) -> Bool {
+        var buf = [UInt8](repeating: 0, count: 1)
+        let result = recv(info.fd, &buf, 1, MSG_PEEK | MSG_DONTWAIT)
+
+        if result == 0 {
+            // 對方關閉連線
+            return false
+        } else if result < 0 {
+            if errno == EWOULDBLOCK || errno == EAGAIN {
+                // 沒資料但仍連線中
+                return true
+            } else {
+                // 發生錯誤
+                return false
+            }
+        }
+
+        return true
     }
     
 
@@ -144,14 +184,14 @@ class SocketServer {
             if clientFD >= 0 {
                 let ip = String(cString: inet_ntoa(clientAddr.sin_addr))
                 let port = Int(UInt16(bigEndian: clientAddr.sin_port))
-                let client = ClientInfo(ip: ip, port: port)
+                let client = ClientInfo(ip: ip, port: port, fd: clientFD)
 
                 lock.lock()
-                connectedClients[client] = clientFD
+                connectedClients[clientFD] = client
                 lock.unlock()
 
                 print("🔌 新連線 \(client)，目前共 \(connectedClients.count) 位 client")
-                print("現有連線：\(connectedClients)")
+//                print("現有連線：\(connectedClients)")
 
                 DispatchQueue.global().async {
                     self.handleClient(fd: clientFD, info: client)
@@ -165,43 +205,69 @@ class SocketServer {
         while true {
             let count = read(fd, &buffer, 1024)
             if count > 0 {
-                let msg = String(bytes: buffer[0..<count], encoding: .utf8) ?? "(invalid utf8)"
-                print("📩 [\(info)] 收到資料: \(msg)")
+                var msg = String(bytes: buffer[0..<count], encoding: .utf8) ?? "(invalid utf8)"
+                if msg.starts(with: "computerInfo:"){
+                    msg.replace("computerInfo:", with: "")
+                    if let jsonData = msg.data(using: .utf8) {
+                        do {
+                            if let dict = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] {
+                                let name:String = dict["name"] as! String
+                                let os:String = dict["os"] as! String
+                                connectedClients[fd]?.setName(name)
+                                connectedClients[fd]?.setOS(os)
+//                                print("名稱：\(dict["name"] ?? "")")
+//                                print("系統：\(dict["os"] ?? "")")
+                                print(connectedClients)
+                            }
+                        } catch {
+                            print("❌ JSON 解析失敗：\(error)")
+                        }
+                    }
+                }else if msg.starts(with: "clipboard:"){
+                    msg.replace("clipboard:", with: "")
+                    let pasteboard = NSPasteboard.general
+                    pasteboard.clearContents()
+                    pasteboard.setString(msg, forType: .string)
+                    print("剪貼簿：\(msg)")
+                }
+//                print("📩 [\(info)] 收到資料: \(msg)")
             } else {
                 break
             }
         }
 
         lock.lock()
-        connectedClients.removeValue(forKey: info)
+        connectedClients.removeValue(forKey: fd)
         lock.unlock()
 
-        print("❌ 離線 \(info)，剩下 \(connectedClients.count) 位 client")
+//        print("❌ 離線 \(info)，剩下 \(connectedClients.count) 位 client")
         close(fd)
     }
 
     func sendResponse(_ message: String, to info: ClientInfo) {
-        lock.lock()
-        guard let fd = connectedClients[info] else {
-            lock.unlock()
-            print("⚠️ 找不到 client \(info)")
-            return
-        }
-        lock.unlock()
-
-        message.withCString {
-            _ = write(fd, $0, strlen($0))
+//        print("to:\(info) msg:\(message)")
+        
+        let msg = message + "\n"
+        msg.withCString {
+            _ = write(info.fd, $0, strlen($0))
         }
     }
     
     func broadcast(_ message: String) {
         lock.lock()
-        for (_, fd) in connectedClients {
+        for (fd, _) in connectedClients {
             message.withCString {
                 _ = write(fd, $0, strlen($0))
             }
         }
         lock.unlock()
+    }
+    
+    func getConnectedClients() -> [Int32 : ClientInfo] {
+        lock.lock()
+        let clients = connectedClients
+        lock.unlock()
+        return clients
     }
 
     func stop() {
@@ -211,7 +277,7 @@ class SocketServer {
         }
 
         lock.lock()
-        for (_, fd) in connectedClients {
+        for (fd, _) in connectedClients {
             close(fd)
         }
         connectedClients.removeAll()

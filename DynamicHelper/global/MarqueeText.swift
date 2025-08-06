@@ -14,6 +14,7 @@ struct MarqueeText: View {
     var TextColor: Color = .white
     var Space: CGFloat = 15
     var font: Font = .system(size: 10)
+    var fontWeight: Font.Weight = .regular
     
     @State private var offsetX: CGFloat = 0
     @State private var textWidth: CGFloat = 0
@@ -29,6 +30,7 @@ struct MarqueeText: View {
                HStack(spacing: Space) {
                    Text(text)
                        .font(font)
+                       .fontWeight(fontWeight)
                        .lineLimit(1)
                        .fixedSize()
                        .background(WidthReader(width: $textWidth, height: $textHeight, text: text, Space: Space))

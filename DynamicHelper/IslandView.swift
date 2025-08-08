@@ -25,6 +25,8 @@ struct IslandView: View {
     @State private var windowPosY: CGFloat = 0
 
     @State private var mousePosition: CGPoint = CGPoint()
+    
+    @State private var MonitorTimer: Timer? = nil
 
     var body: some View {
         GeometryReader { geometry in
@@ -43,7 +45,7 @@ struct IslandView: View {
                             EmptyView()
                         case .exten:
                             VStack{
-                                MenuView(appDelegate: appDelegate).id(island.type)
+                                MenuView(appDelegate: appDelegate).id(island.NowType)
                                 Spacer()
                                 HStack{
                                     MusicView()
@@ -111,7 +113,7 @@ struct IslandView: View {
                             
                         }
                         
-                    }.id(island.type)
+                    }.id(island.NowType)
                 }
                 .padding(.horizontal, windowUpRadius)
                 .frame(width: windowWidth, height: windowHeight+IslandTypeManager.EdgeToTop)
@@ -122,7 +124,7 @@ struct IslandView: View {
 //                    print(defaultWindowPos)
                     island.refreshIsland()
                     startIdleKeepAlive()
-                    MonitorIsPlayingGame()
+                    StartMonitorTimer()
                 }
                 .onChange(of: hoverState.isDragger) {
                     getMousePosition()
@@ -131,9 +133,11 @@ struct IslandView: View {
                     }
                 }
                 .onChange(of: island.outsideChange) {_,newValue in
-                    if(newValue != nil){
-                        refreshWindowSize()
-                    }
+//                    DispatchQueue.main.async{
+                        if(newValue != nil){
+                            refreshWindowSize()
+                        }
+//                    }
                 }
                 .onHover { hovering in
                     if(hoverState.isDragger){return}
@@ -174,7 +178,6 @@ struct IslandView: View {
         var type = island.outsideChange ?? .hide
         if type == .hide && isPlayingGame{type = .gameMode}
         let hasnotch = IslandTypeManager.hasNotch
-        island.setIslandViewChangeState(isChanging: true)
         let LastTypeSize = islandTypeManager.getNowWindowSize()
         let NewTypeSize = IslandTypeManager.getWindowSize(type)
         let NewTypeRadius = IslandTypeManager.getWindowRadius(type)
@@ -182,6 +185,8 @@ struct IslandView: View {
         let isToSmall = IslandTypeManager.isIslandTypeToSmall(from: island.getNowIslandType(), to: type)
         let isToBig = IslandTypeManager.isIslandTypeToBig(from: island.getNowIslandType(), to: type)
         let animateTime:CGFloat = isAnimated ? 0.5 : 0 
+        
+//        island.setIslandViewChangeState(isChanging: true)
         withAnimation(.spring(response: animateTime, dampingFraction: isToBig ? 0.5 : 0.75)){
             if(!hasnotch && type == .hide){windowWidth=NewTypeSize.width}
             else{windowWidth = NewTypeSize.width}
@@ -201,16 +206,19 @@ struct IslandView: View {
         withAnimation(.easeInOut(duration: animateTime)){
             island.changeIslandType(type)
         }
-        
+        island.changelastIslandType(type)
+        island.resetOutsideChange()
         DispatchQueue.main.asyncAfter(deadline: .now() + animateTime*(isToBig ? 1.5 : 1)) {
+            let type = island.getNowIslandType()
+//            print(type)
+            let NewTypeSize = IslandTypeManager.getWindowSize(type)
+//            let NewTypeRadius = IslandTypeManager.getWindowRadius(type)
             appDelegate.update(type: type)
             windowPosX = NewTypeSize.width/2
             windowWidth = NewTypeSize.width
-            island.changelastIslandType(type)
-            island.resetOutsideChange()
-            DispatchQueue.main.async{
-                island.setIslandViewChangeState(isChanging: false)
-            }
+            
+//            island.setIslandViewChangeState(isChanging: false)
+            
         }
     }
     
@@ -226,6 +234,7 @@ struct IslandView: View {
                 }else if(!h){
                     type = .hide
                 }
+//                print(type)
                 island.OutsideChangeIslandType(to: type)
             }
         }
@@ -248,15 +257,30 @@ struct IslandView: View {
         }
     }
     
+    
+    func StartMonitorTimer(){
+        MonitorTimer?.invalidate()
+        MonitorTimer = nil
+        MonitorTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
+            MonitorIsPlayingGame()
+        }
+    }
+    
+    
+//    func refreshIsland(){
+//        if island.getNowIslandType() == .hide && island.checkWeatherOusideChange(){
+//            island.refreshIsland(Animate: false)
+//        }
+//    }
+    
+    
     func MonitorIsPlayingGame(){
-        Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
-            isPlayingGame = isLikelyGameApp()
-            if(!isPlayingGame && island.checkNowIslandTypeIs(.gameMode)){
-                island.OutsideChangeIslandType(to: .hide,EnforceChange: true)
-            }
-            if(island.checkNowIslandTypeIs(.hide) && isPlayingGame){
-                island.OutsideChangeIslandType(to: .gameMode,EnforceChange: true)
-            }
+        isPlayingGame = isLikelyGameApp()
+        if(!isPlayingGame && island.checkNowIslandTypeIs(.gameMode)){
+            island.OutsideChangeIslandType(to: .hide,EnforceChange: true)
+        }
+        if(island.checkNowIslandTypeIs(.hide) && isPlayingGame){
+            island.OutsideChangeIslandType(to: .gameMode,EnforceChange: true)
         }
     }
     

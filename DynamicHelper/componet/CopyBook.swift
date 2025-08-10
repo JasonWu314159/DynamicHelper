@@ -7,55 +7,117 @@
 
 import SwiftUI
 import AppKit
+import UniformTypeIdentifiers
 
 class StringStorage: ObservableObject {
+    static let shared = StringStorage()
     @Published var Item: [(String,Bool)] = []
     var lastScrollPosID:Int? = 0
     var lastScrollPos:CGFloat = 0
     var containID = UUID()
     let objectWidth:CGFloat = 80
+    
+    struct TextEntry: Identifiable, Equatable {
+        let id = UUID()
+        let fileURL: URL // 儲存原始格式
+        let typeIdentifier: String // e.g., public.rtf, public.html
+        let plainText: String // 顯示用文字
+
+        // 自動產生純文字
+        init?(data: Data, typeIdentifier: String) {
+            self.typeIdentifier = typeIdentifier
+
+            let ext = UTType(typeIdentifier)?.preferredFilenameExtension ?? "txt"
+            let tmpURL = FileManager.default
+                .urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+                .appendingPathComponent("TextStorage")
+                .appendingPathComponent(UUID().uuidString + "." + ext)
+
+            do {
+                try FileManager.default.createDirectory(at: tmpURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try data.write(to: tmpURL)
+                self.fileURL = tmpURL
+
+                // 解析純文字
+                if let attributed = try? NSAttributedString(data: data, options: [
+                    .documentType: Self.documentType(for: typeIdentifier)
+                ], documentAttributes: nil) {
+                    self.plainText = attributed.string
+                } else if let str = String(data: data, encoding: .utf8) {
+                    self.plainText = str
+                } else {
+                    self.plainText = "[無法解讀內容]"
+                }
+            } catch {
+                print("❌ 儲存 TextEntry 失敗：\(error)")
+                return nil
+            }
+        }
+
+        static func documentType(for type: String) -> NSAttributedString.DocumentType {
+            switch type {
+            case "public.rtf":
+                return .rtf
+            case "public.html":
+                return .html
+            default:
+                return .plain
+            }
+        }
+    }
 }
-var stringStorage = StringStorage()
+
+//var stringStorage = StringStorage()
 
 struct CopyBookScroller: View {
     @State private var offsetX:CGFloat = 0
     @State private var maxWidth:CGFloat = 0
     @State private var lastItemCount: Int = 0
     var body: some View {
-        ScrollViewWithOffsetBinding(offsetX:$offsetX) {
-            CopyBook()
+        ZStack() {
+            ScrollViewWithOffsetBinding(offsetX:$offsetX) {
+                CopyBook()
+            }
+            
+            .scrollIndicators(.hidden)
+            .clipped()
+            //        .scrollPosition(id: $visibleID)
+            .onAppear{
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.01)
+                {
+                    offsetX = StringStorage.shared.lastScrollPos
+                }
+            }
+            .onDisappear {
+                StringStorage.shared.lastScrollPos = offsetX
+            }
+            .onReceive(StringStorage.shared.$Item) {newValue in
+                if lastItemCount < newValue.count && StringStorage.shared.objectWidth*CGFloat(newValue.count) > maxWidth{
+                    DispatchQueue.main.async
+                    {
+                        offsetAnimation(offsetX+StringStorage.shared.objectWidth+20)
+                    }
+                }
+                lastItemCount = newValue.count
+            }
+            .background(
+                GeometryReader { geo in
+                    Color.clear
+                        .onAppear {
+                            maxWidth = geo.size.width
+                        }
+                }
+            )
+            RoundedRectangle(cornerRadius: 5)
+                .stroke(
+                    Color(red: 0.5, green: 0.5, blue: 0.5),
+                    lineWidth: 0//FileDropViewSpace.isHovering ? 5 : 0
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .scaleEffect(x:1.05, y:1.1)
         }
         .frame(height: 50,alignment: .leading)
         .frame(maxWidth: .infinity)
-        .scrollIndicators(.hidden)
-        .clipped()
-        //        .scrollPosition(id: $visibleID)
-        .onAppear{
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.01)
-            {
-                offsetX = stringStorage.lastScrollPos
-            }
-        }
-        .onDisappear {
-            stringStorage.lastScrollPos = offsetX
-        }
-        .onReceive(stringStorage.$Item) {newValue in
-            if lastItemCount < newValue.count && stringStorage.objectWidth*CGFloat(newValue.count) > maxWidth{
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.001)
-                {
-                    offsetAnimation(offsetX+stringStorage.objectWidth+20)
-                }
-            }
-            lastItemCount = newValue.count
-        }
-        .background(
-            GeometryReader { geo in
-                Color.clear
-                    .onAppear {
-                        maxWidth = geo.size.width
-                    }
-            }
-        )
     }
     
     func offsetAnimation(_ to:CGFloat,duration:Double = 0.2){
@@ -74,7 +136,7 @@ struct CopyBookScroller: View {
 }
 
 struct CopyBook: View {
-    @ObservedObject var Strings:StringStorage = stringStorage
+    @ObservedObject var Strings:StringStorage = StringStorage.shared
     @State private var AddButtonIsHover:Bool = false
     var body: some View {
         HStack(spacing: 0) {
@@ -104,7 +166,7 @@ struct CopyBook: View {
                     }
                 }
                 .onTapGesture {
-                    stringStorage.Item.append(("",false))
+                    StringStorage.shared.Item.append(("",false))
                     Strings.containID = UUID()
                 }
             
@@ -117,10 +179,10 @@ struct CopyBook: View {
 struct CopyBook_Previews:View {
     @State private var previews:String
     private var id:Int
-    private let objectWidth:CGFloat = stringStorage.objectWidth
+    private let objectWidth:CGFloat = StringStorage.shared.objectWidth
     @State private var isHovered:Bool = false
     @State private var offsetX:CGFloat = 0
-    @State private var width:CGFloat = stringStorage.objectWidth
+    @State private var width:CGFloat = StringStorage.shared.objectWidth
     @State private var isAppear:Bool = false
 
     
@@ -155,14 +217,14 @@ struct CopyBook_Previews:View {
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .foregroundStyle(.gray)
                                 .onTapGesture {
-                                    if id >= 0 && id < stringStorage.Item.count {
+                                    if id >= 0 && id < StringStorage.shared.Item.count {
                                         withAnimation(.easeInOut(duration: 0.2)){
                                             offsetX = -objectWidth
                                         }
                                         widthAnimate(0,duration:0.2)
                                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.21) {
-                                            stringStorage.Item.remove(at: id)
-                                            stringStorage.containID = UUID()
+                                            StringStorage.shared.Item.remove(at: id)
+                                            StringStorage.shared.containID = UUID()
                                         }
                                     }
                                 }
@@ -187,7 +249,7 @@ struct CopyBook_Previews:View {
         }
         .onAppear {
             if(isAppear){return}
-            stringStorage.Item[id].1 = true
+            StringStorage.shared.Item[id].1 = true
             offsetX = -objectWidth
             withAnimation(.easeInOut(duration: 0.2)){
                 offsetX = 0
@@ -201,7 +263,7 @@ struct CopyBook_Previews:View {
             let pasteboard = NSPasteboard.general
             if let copied = pasteboard.string(forType: .string) {
                 previews = copied
-                stringStorage.Item[id].0 = previews
+                StringStorage.shared.Item[id].0 = previews
             }
         }else if(i == 1){
             let pasteboard = NSPasteboard.general

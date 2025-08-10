@@ -93,6 +93,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     func applicationWillTerminate(_ notification: Notification) {
         screenMonitor = nil // 自動 deinit 時會 removeObserver
+        DeleteAllCopyFile()
     }
     
     

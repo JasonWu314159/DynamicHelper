@@ -140,12 +140,13 @@ struct IslandView: View {
 //                    }
                 }
                 .onHover { hovering in
+//                    print("hover")
                     if(hoverState.isDragger){return}
                     if(island.isLock && !hovering){return}
                     onHoverEvent(hovering)
                     hoverState.isHovering = hovering
                 }
-                .onDrop(of: ["public.file-url"], isTargeted: $hoverState.isDragger) { providers in
+                .onDrop(of: [.item], isTargeted: $hoverState.isDragger) { providers in
                     // 實際 drop 時會觸發這裡
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5)
                     {

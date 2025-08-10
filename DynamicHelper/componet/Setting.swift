@@ -131,7 +131,7 @@ struct SettingsBody: View {
                     Text("清除剪貼簿")
                     Spacer()
                     Button(action: {
-                        stringStorage.Item = []
+                        StringStorage.shared.Item = []
                         saveSettings()
                     }) {
                         Text("清除")
@@ -166,7 +166,7 @@ func saveSettings() {
     UserDefaults.standard.set(shouldSaveCopyBook, forKey: "shouldSaveCopyBook")
     UserDefaults.standard.set(defaultWindowPos, forKey: "defaultWindowPos")
     if(shouldSaveCopyBook){
-        UserDefaults.standard.set(stringStorage.Item, forKey: "CopyBook")
+        UserDefaults.standard.set(StringStorage.shared.Item, forKey: "CopyBook")
     }
     getSettings()
 }
@@ -189,7 +189,7 @@ func getSettings() {
     }
     shouldSaveCopyBook = UserDefaults.standard.bool(forKey: "shouldSaveCopyBook")
     if(shouldSaveCopyBook){
-        stringStorage.Item = (UserDefaults.standard.array(forKey: "CopyBook") ?? []) as! [(String,Bool)]
+        StringStorage.shared.Item = (UserDefaults.standard.array(forKey: "CopyBook") ?? []) as! [(String,Bool)]
     }
     
 }

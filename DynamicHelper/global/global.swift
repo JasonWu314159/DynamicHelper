@@ -37,7 +37,6 @@ class HoverState: ObservableObject {
 }
 
 
-var fileStorage:FileStorage = FileStorage()
 
 class ViewSpace: ObservableObject {
     @Published var frame:CGRect = CGRect.zero

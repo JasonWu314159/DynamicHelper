@@ -12,7 +12,6 @@ import Foundation
 
 struct SoundController: View {
     
-    @ObservedObject private var volumeManager = VolumeManager
     @State private var backgroundColor: CGFloat = 0.0
     @State private var isPressed = false
     @State var isHovering: Bool = false
@@ -24,7 +23,7 @@ struct SoundController: View {
     let BigSize:CGFloat = 3.9
     @State var BigType:Bool = false
     @State var timer:Timer?
-    @State var volume:Double = Double(getSystemVolume() ?? 0.5)
+    @State var volume:Double = Double(VolumeFunc.getSystemVolume() ?? 0.5)
     @State var isDragged:Bool = false
     
     var body: some View {
@@ -32,10 +31,10 @@ struct SoundController: View {
             .onChanged { _ in
 //                if(!VolumeManager.canGetVolume){return}
                 isPressed = true
-                var mute = !isSystemMuted()! || VolumeManager.volume == 0
-                if(!VolumeManager.canGetVolume){mute = !isSystemMuted()!}
+                var mute = !VolumeFunc.isSystemMuted()! || VolumeListenerManager.VolumeManager.volume == 0
+                if(!VolumeListenerManager.VolumeManager.canGetVolume){mute = !VolumeFunc.isSystemMuted()!}
 //                print(mute)
-                setSystemMute(mute)
+                VolumeFunc.setSystemMute(mute)
             }
             .onEnded { _ in
                 isPressed = false
@@ -47,14 +46,14 @@ struct SoundController: View {
             ZStack{
                 HStack{
                     Image(
-                        systemName: getVolumeIcon(VolumeManager)
+                        systemName: getVolumeIcon(VolumeListenerManager.VolumeManager)
                     )
                     .font(.system(size: size*sizeR))
-                    .foregroundStyle(volumeManager.canGetVolume ? .white : .red)
+                    .foregroundStyle(VolumeListenerManager.VolumeManager.canGetVolume ? .white : .red)
                     .scaleEffect(isPressed ? 1.0 : defaultMenuItemButtonResizeMagin)
                     .gesture(pressGesture)
                     .offset(x: 0)
-                    .help(VolumeManager.canGetVolume ? "" : "無法取得聲音資訊")
+                    .help(VolumeListenerManager.VolumeManager.canGetVolume ? "" : "無法取得聲音資訊")
                 }
                 .padding(.horizontal,4)
                 .frame(maxWidth: .infinity, maxHeight: .infinity,alignment: .leading)
@@ -62,13 +61,13 @@ struct SoundController: View {
                     HStack{
                         SliderBar(progress: $volume, isDragging: $isDragged)
                             .onChange(of: volume) { oldValue,newValue in
-                                if(!VolumeManager.isMuted || newValue != 0) {setSystemVolume(Float(newValue))}
-                                setSystemMute(newValue == 0)
-                            }.onChange(of: VolumeManager.isMuted) { oldValue,newValue in
-                                volume = VolumeManager.isMuted ? 0.0 : Double(VolumeManager.volume)
-                            }.onChange(of: VolumeManager.volume) { oldValue,newValue in
+                                if(!VolumeListenerManager.VolumeManager.isMuted || newValue != 0) {VolumeFunc.setSystemVolume(Float(newValue))}
+                                VolumeFunc.setSystemMute(newValue == 0)
+                            }.onChange(of: VolumeListenerManager.VolumeManager.isMuted) { oldValue,newValue in
+                                volume = VolumeListenerManager.VolumeManager.isMuted ? 0.0 : Double(VolumeListenerManager.VolumeManager.volume)
+                            }.onChange(of: VolumeListenerManager.VolumeManager.volume) { oldValue,newValue in
                                 if(!isDragged){
-                                    volume = Double(VolumeManager.volume)
+                                    volume = Double(VolumeListenerManager.VolumeManager.volume)
                                 }
                             }
                     }
@@ -89,11 +88,11 @@ struct SoundController: View {
         .contextMenu {
             setOutputDeviceView()
         }
-        .onChange(of: VolumeManager.canGetVolume) { oldValue,newValue in
-            volume = Double(VolumeManager.volume)
+        .onChange(of: VolumeListenerManager.VolumeManager.canGetVolume) { oldValue,newValue in
+            volume = Double(VolumeListenerManager.VolumeManager.volume)
         }
         .onAppear{
-            volumeManager.setupVolumeListener()
+            VolumeListenerManager.VolumeManager.setupVolumeListener()
         }
     }
     
@@ -119,7 +118,7 @@ struct SoundController: View {
     }
     
     func startTimer() {
-        if(!volumeManager.canGetVolume){return}
+        if(!VolumeListenerManager.VolumeManager.canGetVolume){return}
         self.timer = Timer.scheduledTimer(withTimeInterval: hoverMaxTime, repeats: false) { _ in
             withAnimation(.easeInOut(duration: 0.2)){
                 BigType = true
@@ -136,13 +135,13 @@ struct SoundController: View {
 
 
 struct setOutputDeviceView: View {
-    @State var COD = getCurrentOutputDeviceID()
+    @State var COD = VolumeFunc.getCurrentOutputDeviceID()
     var body: some View {
         Text("設定輸出裝置")
         ForEach (getOutputDevice(), id:\.ID){device in
             Button(action: {
-                setOutputDevice(device.ID)
-                COD = getCurrentOutputDeviceID()
+                VolumeFunc.setOutputDevice(device.ID)
+                COD = VolumeFunc.getCurrentOutputDeviceID()
             }) {
                 Text(device.name)
                 if device.ID == COD {
@@ -150,14 +149,14 @@ struct setOutputDeviceView: View {
                 }
             }
             .onAppear {
-                COD = getCurrentOutputDeviceID()
+                COD = VolumeFunc.getCurrentOutputDeviceID()
             }
         }
     }
     
     func getOutputDevice() -> [(ID:UInt32,name:String)] {
         var result: [(ID: UInt32, name: String)] = []
-        if let devices = getAllAbleOutputDevice() {
+        if let devices = VolumeFunc.getAllAbleOutputDevice() {
             for id in devices.keys {
                 if devices[id]?.type == .input{continue}
                 if devices[id]?.type == .unkown{continue}

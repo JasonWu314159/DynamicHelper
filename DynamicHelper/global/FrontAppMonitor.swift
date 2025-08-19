@@ -71,7 +71,7 @@ func getAppCategory(_ app: NSRunningApplication) -> String? {
 
 func isLikelyGameApp() -> Bool {
     guard let app = NSWorkspace.shared.frontmostApplication else {print("can't get frontmost app"); return false }
-
+    print(app)
 //    let gamesCategory: Set<String> = [
 //        "public.app-category.games",
 //        "public.app-category.board-games"

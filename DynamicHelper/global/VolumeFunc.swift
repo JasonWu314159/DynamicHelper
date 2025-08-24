@@ -141,17 +141,17 @@ class VolumeFunc {
     }
     
     
-    static func isSystemMuted() -> Bool? {
-        guard let dev = defaultOutputDevice() else { return nil }
+    static func isSystemMuted() -> Bool {
+        guard let dev = defaultOutputDevice() else { return false }
         var addr = AudioObjectPropertyAddress(
             mSelector: kAudioDevicePropertyMute,
             mScope: kAudioDevicePropertyScopeOutput,
             mElement: kAudioObjectPropertyElementMain
         )
-        guard hasProperty(dev, addr.mSelector, addr.mScope, addr.mElement) else { return nil }
+        guard hasProperty(dev, addr.mSelector, addr.mScope, addr.mElement) else { return false }
         var m: UInt32 = 0
         var size = UInt32(MemoryLayout<UInt32>.size)
-        return AudioObjectGetPropertyData(dev, &addr, 0, nil, &size, &m) == noErr ? (m != 0) : nil
+        return AudioObjectGetPropertyData(dev, &addr, 0, nil, &size, &m) == noErr ? (m != 0) : false
     }
     
     

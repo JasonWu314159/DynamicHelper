@@ -31,8 +31,8 @@ struct SoundController: View {
             .onChanged { _ in
 //                if(!VolumeManager.canGetVolume){return}
                 isPressed = true
-                var mute = !VolumeFunc.isSystemMuted()! || VolumeListenerManager.VolumeManager.volume == 0
-                if(!VolumeListenerManager.VolumeManager.canGetVolume){mute = !VolumeFunc.isSystemMuted()!}
+                var mute = !VolumeFunc.isSystemMuted() || VolumeListenerManager.VolumeManager.volume == 0
+                if(!VolumeListenerManager.VolumeManager.canGetVolume){mute = !VolumeFunc.isSystemMuted()}
 //                print(mute)
                 VolumeFunc.setSystemMute(mute)
             }

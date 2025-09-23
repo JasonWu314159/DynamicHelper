@@ -38,6 +38,7 @@ struct ScrollViewWithOffsetBinding<Content: View>: NSViewRepresentable {
     
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = TrackingScrollView()
+        
         scrollView.drawsBackground = false
         scrollView.hasHorizontalScroller = false
         scrollView.hasVerticalScroller = false
@@ -47,24 +48,35 @@ struct ScrollViewWithOffsetBinding<Content: View>: NSViewRepresentable {
             scrollView.horizontalScrollElasticity = .none
         }
         
+//        let hosting = NSHostingView(rootView: content())
+//        hosting.translatesAutoresizingMaskIntoConstraints = true
+//        let clip = scrollView.contentView
+//        hosting.frame = NSRect(origin: .zero, size: clip.bounds.size)
+//        if scrollWay == .horizontal {
+//            hosting.autoresizingMask = [.height]   // 交叉軸跟 clip；滾動軸可自由延伸
+//        } else {
+//            hosting.autoresizingMask = [.width]
+//        }
+//        scrollView.documentView = hosting
+        
         let documentView = NSHostingView(rootView: content())
-        documentView.translatesAutoresizingMaskIntoConstraints = false
+        documentView.translatesAutoresizingMaskIntoConstraints = true
         
         scrollView.documentView = documentView
         
         
-        // Auto Layout
+//         Auto Layout
         if(scrollWay == .horizontal){
             NSLayoutConstraint.activate([
                 documentView.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
                 documentView.bottomAnchor.constraint(equalTo: scrollView.contentView.bottomAnchor),
-                documentView.heightAnchor.constraint(equalTo: scrollView.heightAnchor)
+                documentView.heightAnchor.constraint(equalTo: scrollView.contentView.heightAnchor)
             ])
         }else{
             NSLayoutConstraint.activate([
                 documentView.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor),
                 documentView.trailingAnchor.constraint(equalTo: scrollView.contentView.trailingAnchor),
-                documentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor)
+                documentView.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor),
             ])
         }
         
@@ -109,6 +121,7 @@ struct ScrollViewWithOffsetBinding<Content: View>: NSViewRepresentable {
             scrollView.reflectScrolledClipView(scrollView.contentView)
         }
     }
+    
     
     class Coordinator: NSObject {
         var parent: ScrollViewWithOffsetBinding<Content>

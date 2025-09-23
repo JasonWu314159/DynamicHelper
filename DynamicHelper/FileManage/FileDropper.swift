@@ -8,6 +8,7 @@
 import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
+import Inspect
 
 struct DroppableIslandView: View {
     @ObservedObject var storedFiles:FileStorage = fileStorage
@@ -22,24 +23,9 @@ struct DroppableIslandView: View {
         GeometryReader { geo in
             ZStack() {
                 if !storedFiles.Files.isEmpty {
-                    ScrollViewWithOffsetBinding(offsetX: $offsetX) {
-                        FileContainerView(storedFiles:storedFiles)
-                    }
-                    .clipped()
+                    FileContainerView(storedFiles:storedFiles)
                     .frame(maxHeight: .infinity)
                     .onTapGesture {
-                        for i in 0..<storedFiles.Files.count {
-                            storedFiles.Files[i].isClicked = false
-                        }
-                    }
-                    .onAppear{
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.01)
-                        {
-                            offsetX = storedFiles.lastScrollPos
-                        }
-                    }
-                    .onDisappear {
-                        storedFiles.lastScrollPos = offsetX
                         for i in 0..<storedFiles.Files.count {
                             storedFiles.Files[i].isClicked = false
                         }
@@ -75,13 +61,30 @@ struct DroppableIslandView: View {
 struct FileContainerView: View {
     @ObservedObject var storedFiles:FileStorage
     var body: some View {
-        HStack(spacing: 10) {
-            ForEach($storedFiles.Files) { $file in
-                FileInfoView(file: $file, storedFiles: storedFiles)
-                    
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal) {
+                HStack(spacing: 10) {
+                    ForEach($storedFiles.Files) {$file in
+                        FileInfoView(file: $file, storedFiles: storedFiles).id($file.id)
+                        
+                    }
+                    Color.clear
+                        .onAppear{
+                            withAnimation {
+                                proxy.scrollTo(
+                                    storedFiles.lastScrollFileID, anchor: .center
+                                )
+                            }
+                        }
+                }
+                .padding()
+                
+            }
+            .inspect { (nsScrollView: NSScrollView) in
+                nsScrollView.hasHorizontalScroller = false
+                nsScrollView.hasVerticalScroller = false
             }
         }
-        .padding()
     }
 }
 
@@ -90,6 +93,7 @@ struct FileInfoView: View  {
     @Binding var file: FileStorage.FileEntry
     @ObservedObject var storedFiles:FileStorage
     @State private var isHovered: Bool = false
+    @State private var isExist = true
     var body: some View {
         ZStack{
             if(file.isClicked){
@@ -115,9 +119,16 @@ struct FileInfoView: View  {
                     .resizable()
                     .frame(width: 50, height: 50)
                     .cornerRadius(6)
-                MarqueeText(text: file.RealUrl.lastPathComponent, speed: 0.05, delay: 0.5,font: .system(size: 13))
-                    .padding(.vertical,0)
+                ZStack{
+                    MarqueeText(text: file.RealUrl.lastPathComponent, speed: 0.05, delay: 0.5,font: .system(size: 13))
+                        .padding(.vertical,0)
+                        .allowsHitTesting(false)
+                    Color.clear
+                        .contentShape(Rectangle()) 
+                        .frame(maxHeight: 14)
+                }
             }
+            .clipped()
             .padding(.horizontal,6)
             .onDrag {
                 let f = file
@@ -159,6 +170,7 @@ struct FileInfoView: View  {
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .foregroundStyle(.gray)
                                 .onTapGesture {
+                                    isExist = false
                                     do {
                                         try FileManager.default.removeItem(at: file.storageURL)
                                         print("✅ 檔案已刪除")
@@ -186,6 +198,7 @@ struct FileInfoView: View  {
             }
             Divider()
             Button("移除") {
+                isExist = false
                 storedFiles.Files.removeAll { $0 == file }
                 do {
                     try FileManager.default.removeItem(at: file.storageURL)
@@ -197,6 +210,9 @@ struct FileInfoView: View  {
         }
         .onHover{ hovering in
             isHovered = hovering
+            if isExist {
+                storedFiles.lastScrollFileID = file.id
+            }
         }
     }
 }

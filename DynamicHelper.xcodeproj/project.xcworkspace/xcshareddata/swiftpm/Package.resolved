@@ -1,5 +1,5 @@
 {
-  "originHash" : "aae61040c30e63b9cf0f5455365680cfeabef0aac829c0941d4d6f6180010fc9",
+  "originHash" : "b4526bdd21e2eb9f2b9849c44991669498e6ae2fe6dc9c60402f2fa6ad5cd57c",
   "pins" : [
     {
       "identity" : "launchatlogin-modern",
@@ -8,6 +8,15 @@
       "state" : {
         "branch" : "main",
         "revision" : "a04ec1c363be3627734f6dad757d82f5d4fa8fcc"
+      }
+    },
+    {
+      "identity" : "swiftui-inspect",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/quintschaf/SwiftUI-Inspect.git",
+      "state" : {
+        "revision" : "be3444795003c324f47b6a7391635ab337035a8e",
+        "version" : "0.1.0"
       }
     }
   ],

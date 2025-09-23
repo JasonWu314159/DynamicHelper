@@ -87,6 +87,7 @@ struct MarqueeText: View {
        }
 
        func stopAnimation() {
+//           print("stop \(text)")
            timer?.invalidate()
            timer = nil
            withAnimation(Animation.linear(duration: 0.0)) {

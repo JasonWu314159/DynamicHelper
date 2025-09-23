@@ -25,8 +25,10 @@ class FileStorage: ObservableObject {
         return appDataDirectory
     }
     
+    var lastScrollFileID:UUID? = nil
+    
     struct FileEntry: Identifiable, Equatable {
-        let id = UUID()
+        let id: UUID = UUID()
         let RealUrl: URL
         let fileName: String
         

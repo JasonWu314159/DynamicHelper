@@ -8,11 +8,14 @@
 import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
+import Inspect
+
 
 class StringStorage: ObservableObject {
+    
     static let shared = StringStorage()
     @Published var Item: [(String,Bool)] = []
-    var lastScrollPosID:Int? = 0
+    var lastScrollPosID:Int = 0
     var lastScrollPos:CGFloat = 0
     var containID = UUID()
     let objectWidth:CGFloat = 80
@@ -75,31 +78,8 @@ struct CopyBookScroller: View {
     @State private var lastItemCount: Int = 0
     var body: some View {
         ZStack() {
-            ScrollViewWithOffsetBinding(offsetX:$offsetX) {
-                CopyBook()
-            }
             
-            .scrollIndicators(.hidden)
-            .clipped()
-            //        .scrollPosition(id: $visibleID)
-            .onAppear{
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.01)
-                {
-                    offsetX = StringStorage.shared.lastScrollPos
-                }
-            }
-            .onDisappear {
-                StringStorage.shared.lastScrollPos = offsetX
-            }
-            .onReceive(StringStorage.shared.$Item) {newValue in
-                if lastItemCount < newValue.count && StringStorage.shared.objectWidth*CGFloat(newValue.count) > maxWidth{
-                    DispatchQueue.main.async
-                    {
-                        offsetAnimation(offsetX+StringStorage.shared.objectWidth+20)
-                    }
-                }
-                lastItemCount = newValue.count
-            }
+            CopyBook()
             .background(
                 GeometryReader { geo in
                     Color.clear
@@ -121,6 +101,7 @@ struct CopyBookScroller: View {
     }
     
     func offsetAnimation(_ to:CGFloat,duration:Double = 0.2){
+        
         let stepTime = 0.01
         let d = (duration * 100).rounded() / 100
         let totalSteps = Int(d/stepTime)
@@ -140,36 +121,52 @@ struct CopyBook: View {
     @State private var AddButtonIsHover:Bool = false
     var body: some View {
         HStack(spacing: 0) {
-            Rectangle()
-                .frame(width: 1)
-                .frame(maxHeight: .infinity)
-                .foregroundStyle(.gray.opacity(0.5))
-            ForEach(Array(Strings.Item.enumerated()), id: \.offset) { index, item in
-                CopyBook_Previews(previews: item,id: index)
-                Rectangle()
-                    .frame(width: 1)
-                    .frame(maxHeight: .infinity)
-                    .foregroundStyle(.gray.opacity(0.5))
-            }.id(Strings.containID)
-            Circle()
-                .id(Strings.Item.count*3)
-                .frame(width: 35, height: 35)
-                .foregroundStyle(AddButtonIsHover ? .gray.opacity(0.3) :.black)
-                .overlay(
-                    Image(systemName: "plus")
-                        .font(.system(size: 17))
-                        .foregroundStyle(.white)
-                )
-                .onHover{ isHovering in
-                    withAnimation(.easeInOut(duration: 0.2)){
-                        AddButtonIsHover = isHovering
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal) {
+                    HStack(spacing: 0) {
+                        Rectangle()
+                            .frame(width: 1)
+                            .frame(maxHeight: .infinity)
+                            .foregroundStyle(.gray.opacity(0.5))
+                        ForEach(Array(Strings.Item.enumerated()), id: \.offset) { index, item in
+                            CopyBook_Previews(previews: item,id: index).id(index)
+                            Rectangle()
+                                .frame(width: 1)
+                                .frame(maxHeight: .infinity)
+                                .foregroundStyle(.gray.opacity(0.5))
+                        }.id(Strings.containID)
+                        Circle()
+                            .id(Strings.Item.count*3)
+                            .frame(width: 35, height: 35)
+                            .foregroundStyle(AddButtonIsHover ? .gray.opacity(0.3) :.black)
+                            .overlay(
+                                Image(systemName: "plus")
+                                    .font(.system(size: 17))
+                                    .foregroundStyle(.white)
+                            )
+                            .onHover{ isHovering in
+                                withAnimation(.easeInOut(duration: 0.2)){
+                                    AddButtonIsHover = isHovering
+                                }
+                            }
+                            .onTapGesture {
+                                StringStorage.shared.Item.append(("",false))
+                                Strings.containID = UUID()
+                            }
+                            .onAppear(){
+                                withAnimation {
+                                    proxy.scrollTo(
+                                        StringStorage.shared.lastScrollPosID, anchor: .center
+                                    )
+                                }
+                            }
                     }
                 }
-                .onTapGesture {
-                    StringStorage.shared.Item.append(("",false))
-                    Strings.containID = UUID()
+                .inspect { (nsScrollView: NSScrollView) in
+                    nsScrollView.hasHorizontalScroller = false
+                    nsScrollView.hasVerticalScroller = true
                 }
-            
+            }
         }
     }
 }
@@ -242,6 +239,7 @@ struct CopyBook_Previews:View {
         .clipped()
         .onHover{ h in
             isHovered = h
+            StringStorage.shared.lastScrollPosID = id
         }
         .onTapGesture {
             if(previews == ""){CopyAndPaste(0)}

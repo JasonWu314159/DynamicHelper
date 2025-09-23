@@ -52,7 +52,7 @@ struct IslandView: View {
                                     VStack{
                                         Spacer()
                                         CopyBookScroller()
-                                        //                                            .background(.blue)
+//                                        //                                            .background(.blue)
                                     }
                                     ClockView()
                                 }
@@ -133,11 +133,11 @@ struct IslandView: View {
                     }
                 }
                 .onChange(of: island.outsideChange) {_,newValue in
-//                    DispatchQueue.main.async{
+                    DispatchQueue.main.async{
                         if(newValue != nil){
                             refreshWindowSize()
                         }
-//                    }
+                    }
                 }
                 .onHover { hovering in
 //                    print("hover")

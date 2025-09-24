@@ -14,9 +14,15 @@ struct MenuView: View {
     
     var body: some View {
         HStack(spacing: 0){
+            #if false 
+                MenuSettingButton(systemName: "gearshape.fill")
+                    .frame(width: 32 , height: 32)
+                    .padding(.leading)
+            #else
             MenuItemButton(systemName: "gearshape.fill",onTap: {appDelegate.showSettingsWindow()})
                 .frame(width: 32 , height: 32)
                 .padding(.leading)
+            #endif
             MenuItemButton(
                 systemName: islandTypeManager.checkNowIslandTypeIs(.exten) ? "folder.fill" : "house.fill",
                 onTap: {FolderItemButtonAction()}

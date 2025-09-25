@@ -203,29 +203,55 @@ func previousTrack(_ NowPlayingTime: Double = 0) {
     time.lastPressTime = currentTimestamp
 }
 
-func isMusicPlaying() -> Bool? {
-    let script = """
-    tell application "Music"
-        if it is running then
-            return player state is playing
-        else
-            return false
-        end if
-    end tell
-    """
+func isMusicPlaying(timeout: TimeInterval = 1.0) -> Bool? {
+        // AppleScript 內容：若 Music 有開，回傳是否正在播放；否則回傳 false
+        let script = """
+        tell application "Music"
+            if it is running then
+                return player state is playing
+            else
+                return false
+            end if
+        end tell
+        """
 
-    var error: NSDictionary?
-    if let appleScript = NSAppleScript(source: script) {
-        let result = appleScript.executeAndReturnError(&error)
-        if let error = error {
-            print("isMusicPlaying ❌ AppleScript Error: \(error)")
+        // 以外部行程執行 osascript，避免 NSAppleScript 的執行緒/生命週期風險
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        proc.arguments = ["-e", script]
+
+        let pipeOut = Pipe()
+        let pipeErr = Pipe()
+        proc.standardOutput = pipeOut
+        proc.standardError = pipeErr
+
+        do {
+            try proc.run()
+        } catch {
             return nil
-        } else {
-            return result.booleanValue // ✅ 回傳 true 或 false
+        }
+
+        // 簡單 timeout，避免外部行程卡住
+        let deadline = Date().addingTimeInterval(timeout)
+        while proc.isRunning && Date() < deadline {
+            RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
+        }
+        if proc.isRunning { proc.terminate() }
+
+        let data = pipeOut.fileHandleForReading.readDataToEndOfFile()
+        guard let raw = String(data: data, encoding: .utf8)?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .lowercased()
+        else { return nil }
+
+        switch raw {
+        case "true":  return true
+        case "false": return false
+        default:
+            // 可能是權限錯誤等情況，stderr 通常會有訊息，但這裡以 nil 表示「未知/失敗」
+            return nil
         }
     }
-    return nil
-}
 
 func openMusic(){
     let script: String = """

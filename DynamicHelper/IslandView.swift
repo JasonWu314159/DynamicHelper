@@ -13,6 +13,7 @@ struct IslandView: View {
     @State private var dummyState = false
     @State private var isHovering = false
     @State private var isPlayingGame: Bool = false
+    @State private var isPlayingMusic: Bool = false
     @State private var mouseLocation = NSEvent.mouseLocation
     @ObservedObject var hoverState: HoverState = HoverState()
     var appDelegate: AppDelegate// = //AppDelegate()
@@ -43,6 +44,8 @@ struct IslandView: View {
                         switch island.getNowIslandType() {
                         case .hide:
                             EmptyView()
+                        case .onMusicPlaying:
+                            MusicPlaying()
                         case .exten:
                             VStack{
                                 MenuView(appDelegate: appDelegate).id(island.NowType)
@@ -52,7 +55,6 @@ struct IslandView: View {
                                     VStack{
                                         Spacer()
                                         CopyBookScroller()
-//                                        //                                            .background(.blue)
                                     }
                                     ClockView()
                                 }
@@ -176,6 +178,7 @@ struct IslandView: View {
     
     func refreshWindowSize(isAnimated:Bool = true){//type:WindowType,isAnimated:Bool = true, Enforcement:Bool = false){
         if(!island.ShouldRefreshIsland()){island.resetOutsideChange();return}
+        island.setIslandViewChangeState(isChanging: true)
         var type = island.outsideChange ?? .hide
         if type == .hide && isPlayingGame{type = .gameMode}
         let hasnotch = IslandTypeManager.hasNotch
@@ -218,7 +221,7 @@ struct IslandView: View {
             windowPosX = NewTypeSize.width/2
             windowWidth = NewTypeSize.width
             
-//            island.setIslandViewChangeState(isChanging: false)
+            island.setIslandViewChangeState(isChanging: false)
             
         }
     }
@@ -262,8 +265,10 @@ struct IslandView: View {
     func StartMonitorTimer(){
         MonitorTimer?.invalidate()
         MonitorTimer = nil
-        MonitorTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
+        MonitorTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            if island.isTypeChanging {return}
             MonitorIsPlayingGame()
+            MonitorIsMusicPlaying()
         }
     }
     
@@ -280,8 +285,15 @@ struct IslandView: View {
         if(!isPlayingGame && island.checkNowIslandTypeIs(.gameMode)){
             island.OutsideChangeIslandType(to: .hide,EnforceChange: true)
         }
-        if(island.checkNowIslandTypeIs(.hide) && isPlayingGame){
+        if(island.getNowIslandType().level < IslandTypeManager.IslandType.gameMode.level && isPlayingGame){
             island.OutsideChangeIslandType(to: .gameMode,EnforceChange: true)
+        }
+    }
+    
+    func MonitorIsMusicPlaying(){
+        isPlayingMusic = (isMusicPlaying() ?? false)
+        if isPlayingMusic && island.getNowIslandType().level < IslandTypeManager.IslandType.onMusicPlaying.level{
+            island.OutsideChangeIslandType(to: .onMusicPlaying,EnforceChange: true)
         }
     }
     

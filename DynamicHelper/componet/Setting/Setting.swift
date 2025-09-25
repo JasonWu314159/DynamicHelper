@@ -78,6 +78,8 @@ struct SettingsView: View {
             })
             {
                 Image( systemName: "power.circle.fill")
+                    .resizable()
+                    .scaledToFit()
             }
         }
         .formStyle(.grouped)

@@ -11,9 +11,10 @@ import AppKit
 
 
 class IslandTypeManager: ObservableObject {
-    static let StandardSizeLevel:Int = 3
+    static let StandardSizeLevel:Int = 10
     enum IslandType:String, Codable{
         case hide
+        case onMusicPlaying
         case onCharge
         case gameMode
         case exten
@@ -25,17 +26,19 @@ class IslandTypeManager: ObservableObject {
         
         var level: Int {
             switch self {
+            case .onMusicPlaying:return IslandTypeManager.StandardSizeLevel-3
             case .onCharge, .RemoteControl: return IslandTypeManager.StandardSizeLevel-2
             case .gameMode: return IslandTypeManager.StandardSizeLevel-1
             case .exten, .Drop, .Clock, .Hardware: return IslandTypeManager.StandardSizeLevel
             case .ForceFocus: return IslandTypeManager.StandardSizeLevel+1
-            default: return IslandTypeManager.StandardSizeLevel-3
+            default: return IslandTypeManager.StandardSizeLevel-4
             }
         }
     }
     
     static private let WindowSize:[IslandType:(width:CGFloat,height:CGFloat,downRadius:CGFloat,upRadius:CGFloat)] = [
         .hide:(width:0,height:0,downRadius:11,upRadius:6),
+        .onMusicPlaying:(width:70,height:1,downRadius:11,upRadius:6),
         .onCharge:(width:210,height:1,downRadius:11,upRadius:6),
         .RemoteControl:(width:210,height:1,downRadius:11,upRadius:6),
         .gameMode:(width:300,height:1,downRadius:11,upRadius:6),

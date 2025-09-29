@@ -28,6 +28,7 @@ struct IslandView: View {
     @State private var mousePosition: CGPoint = CGPoint()
     
     @State private var MonitorTimer: Timer? = nil
+    
 
     var body: some View {
         GeometryReader { geometry in
@@ -44,12 +45,14 @@ struct IslandView: View {
                         switch island.getNowIslandType() {
                         case .hide:
                             EmptyView()
-                        case .onMusicPlaying:
+                        case .onLogin:
+                            LoginAnimation()
+                        case .onMusicPlaying,.onMusicChanging:
                             MusicPlaying()
                         case .exten:
                             VStack{
                                 MenuView(appDelegate: appDelegate).id(island.NowType)
-                                Spacer()
+//                                Spacer()
                                 HStack{
                                     MusicView()
                                     VStack{
@@ -57,7 +60,7 @@ struct IslandView: View {
                                         CopyBookScroller()
                                     }
                                     ClockView()
-                                }
+                                }.frame(maxHeight:.infinity)
                             }.padding(.vertical,5)
                         case .onCharge:
                             VStack{
@@ -81,16 +84,16 @@ struct IslandView: View {
                         case .Drop:
                             VStack{
                                 MenuView(appDelegate: appDelegate)
-                                Spacer()
+//                                Spacer()
                                 HStack(spacing:0){
                                     AirDropArea().padding(.leading)
                                     DroppableIslandView().padding(.trailing)
-                                }
+                                }.frame(maxHeight:.infinity)
                             }.padding(.vertical,5)
                         case .Clock:
                             VStack{
                                 MenuView(appDelegate: appDelegate)
-                                Spacer()
+//                                Spacer()
                                 HStack{
                                     ClockView()
                                     Spacer()
@@ -99,15 +102,15 @@ struct IslandView: View {
                                     //                                    BackTimer()
                                     Spacer()
                                     //                                    stopwatch()
-                                }.padding(.horizontal)
+                                }.padding(.horizontal).frame(maxHeight:.infinity)
                             }.padding(.vertical,5)
                         case .Hardware:
-                            VStack{
+                            VStack(spacing:0){
                                 MenuView(appDelegate: appDelegate)
-                                HardwareInfoView()
-                                    .frame(maxHeight: .infinity)
-                            }
-                            .padding(.vertical,5)
+                                HardWareDetailView().frame(maxHeight:.infinity)
+                            }.padding(.vertical,5)
+                            .frame(maxHeight: .infinity, alignment: .top)
+
                         case .RemoteControl:
                             RemoteControlHint()
                         default:

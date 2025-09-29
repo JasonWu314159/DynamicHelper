@@ -317,7 +317,7 @@ class GPUsInfoReader{
         
         self.gpus.list.sort{ !$0.state && $1.state }
         
-        print("gpu read success")
+//        print("gpu read success")
 //        print(self.gpus.list)
         return self.gpus.list
     }

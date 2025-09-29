@@ -417,11 +417,11 @@ public extension Double {
 //    }
 //}
 //
-//public extension OperatingSystemVersion {
-//    func getFullVersion(separator: String = ".") -> String {
-//        return "\(majorVersion)\(separator)\(minorVersion)\(separator)\(patchVersion)"
-//    }
-//}
+public extension OperatingSystemVersion {
+    func getFullVersion(separator: String = ".") -> String {
+        return "\(majorVersion)\(separator)\(minorVersion)\(separator)\(patchVersion)"
+    }
+}
 //
 //extension URL {
 //    func checkFileExist() -> Bool {

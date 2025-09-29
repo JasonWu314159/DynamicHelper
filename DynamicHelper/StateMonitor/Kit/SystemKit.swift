@@ -88,7 +88,7 @@ public struct model_s {
     public let name: String
     public let year: Int
     public let type: deviceType
-//    public var icon: NSImage = NSImage()
+    public var icon: NSImage = NSImage(named: NSImage.Name("imacPro"))!
 }
 
 public struct os_s {
@@ -126,6 +126,7 @@ public struct ram_s: Codable {
 }
 
 public struct gpu_s: Codable {
+    public var id: String? = nil
     public var name: String? = nil
     public var vendor: String? = nil
     public var vram: String? = nil
@@ -133,16 +134,28 @@ public struct gpu_s: Codable {
     public var frequencies: [Int32]? = nil
 }
 
+public struct disk_s: Codable {
+    public var id: String? = nil
+    public var name: String? = nil
+    public var size: Int64? = nil
+}
+
 public struct info_s {
     public var cpu: cpu_s? = nil
     public var ram: ram_s? = nil
     public var gpu: [gpu_s]? = nil
+    public var disk: [disk_s]? = nil
 }
 
 public struct device_s {
-    public var model: model_s = model_s(name: "Unknown", year: Calendar.current.component(.year, from: Date()), type: .unknown)
-    public var serialNumber: String? = nil
-    public var bootDate: Date? = nil
+    public var model: model_s = model_s(
+        name: "Unknown",
+        year: Calendar.current.component(.year, from: Date()),
+        type: .unknown,
+    )
+    public var arch: String = "unknown"
+    public var serialNumber: String = "nil"
+    public var bootDate: Date = Date()
     
     public var os: os_s? = nil
     public var info: info_s = info_s()
@@ -162,12 +175,18 @@ public class SystemKit {
         if let modelName = modelID ?? self.getModelID(), let model = deviceDict[modelName] {
             self.device.model = model
             self.device.model.id = modelName
-//            self.device.model.icon = self.getIcon(type: self.device.model.type, year: self.device.model.year)
+            self.device.model.icon = self.getIcon(type: self.device.model.type, year: self.device.model.year)
         } else if let model = self.getModel() {
             self.device.model = model
         }
         
-        self.device.bootDate = self.bootDate()
+        #if arch(x86_64)
+        self.device.arch = "x86_64"
+        #elseif arch(arm64)
+        self.device.arch = "arm64"
+        #endif
+        
+        self.device.bootDate = self.bootDate() ?? Date()
         
         let procInfo = ProcessInfo()
         let systemVersion = procInfo.operatingSystemVersion
@@ -184,6 +203,7 @@ public class SystemKit {
         self.device.info.cpu = self.getCPUInfo()
         self.device.info.ram = self.getRamInfo()
         self.device.info.gpu = self.getGPUInfo()
+        self.device.info.disk = self.getDiskInfo()
         self.device.platform = self.getPlatform()
     }
     
@@ -206,7 +226,10 @@ public class SystemKit {
     }
     
     func modelAndSerialNumber() -> (String?, String?) {
-        let service = IOServiceGetMatchingService(kIOMainPortDefault, IOServiceMatching("IOPlatformExpertDevice"))
+        let service = IOServiceGetMatchingService(
+            kIOMainPortDefault,
+            IOServiceMatching("IOPlatformExpertDevice")
+        )
         
         var modelIdentifier: String?
         if let property = IORegistryEntryCreateCFProperty(service, "model" as CFString, kCFAllocatorDefault, 0), let value = property.takeUnretainedValue() as? Data {
@@ -287,7 +310,11 @@ public class SystemKit {
     
     func getCPUCores() -> (Int32?, Int32?, [core_s])? {
         var iterator: io_iterator_t = io_iterator_t()
-        let result = IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching("AppleARMPE"), &iterator)
+        let result = IOServiceGetMatchingServices(
+            kIOMainPortDefault,
+            IOServiceMatching("AppleARMPE"),
+            &iterator
+        )
         if result != kIOReturnSuccess {
             print("Error find AppleARMPE: " + (String(cString: mach_error_string(result), encoding: String.Encoding.ascii) ?? "unknown error"))
             return nil
@@ -361,11 +388,13 @@ public class SystemKit {
         }
         
         var list: [gpu_s] = []
+        var i = 0
         do {
             if let json = try JSONSerialization.jsonObject(with: Data(res.utf8), options: []) as? [String: Any] {
                 if let arr = json["SPDisplaysDataType"] as? [[String: Any]] {
                     for obj in arr {
                         var gpu: gpu_s = gpu_s()
+                        gpu.id = "\(i)"
                         
                         gpu.name = obj["sppci_model"] as? String
                         gpu.vendor = obj["spdisplays_vendor"] as? String
@@ -378,6 +407,7 @@ public class SystemKit {
                         }
                         
                         list.append(gpu)
+                        i += 1
                     }
                 }
             }
@@ -389,9 +419,111 @@ public class SystemKit {
         return list
     }
     
+    private func getDiskInfo() -> [disk_s]? {
+        var bootableDisks: [disk_s] = []
+        
+        guard let output = process(path: "/usr/sbin/diskutil", arguments: ["list", "-plist"]) else {
+            return nil
+        }
+        
+        do {
+            if let data = output.data(using: .utf8),
+               let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any],
+               let allDisksAndPartitions = plist["AllDisksAndPartitions"] as? [[String: Any]] {
+                
+                for disk in allDisksAndPartitions {
+                    if let partitions = disk["Partitions"] as? [[String: Any]] {
+                        for partition in partitions {
+                            if let bootable = partition["Bootable"] as? Bool, bootable {
+                                var bootableDisk = disk_s()
+                                if let id = partition["DiskUUID"] as? String {
+                                    bootableDisk.id = id
+                                } else if let deviceIdentifier = partition["DeviceIdentifier"] as? String {
+                                    bootableDisk.id = "/dev/" + deviceIdentifier
+                                }
+                                if let volumeName = partition["VolumeName"] as? String {
+                                    bootableDisk.name = volumeName
+                                }
+                                if let size = partition["Size"] as? Int64 {
+                                    bootableDisk.size = size
+                                }
+                                if bootableDisk.id != nil {
+                                    bootableDisks.append(bootableDisk)
+                                }
+                            }
+                        }
+                    }
+                    
+                    if let contentType = disk["Content"] as? String, contentType == "Apple_APFS_Container" || contentType == "Apple_CoreStorage" {
+                        if let deviceIdentifier = disk["DeviceIdentifier"] as? String,
+                           let infoOutput = process(path: "/usr/sbin/diskutil", arguments: ["info", "-plist", deviceIdentifier]),
+                           let infoData = infoOutput.data(using: .utf8),
+                           let info = try PropertyListSerialization.propertyList(from: infoData, options: [], format: nil) as? [String: Any] {
+                            if let isBootDisk = info["BootableVolume"] as? Bool, isBootDisk {
+                                var bootableDisk = disk_s()
+                                if let id = info["DiskUUID"] as? String {
+                                    bootableDisk.id = id
+                                } else {
+                                    bootableDisk.id = "/dev/" + deviceIdentifier
+                                }
+                                if let name = info["VolumeName"] as? String {
+                                    bootableDisk.name = name
+                                } else if let name = disk["DeviceIdentifier"] as? String {
+                                    bootableDisk.name = name
+                                }
+                                
+                                if let size = disk["Size"] as? Int64 {
+                                    bootableDisk.size = size
+                                } else if let total = info["TotalSize"] as? Int64 {
+                                    bootableDisk.size = total
+                                }
+                                
+                                if bootableDisk.id != nil {
+                                    bootableDisks.append(bootableDisk)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch {
+            print("Error parsing diskutil output: \(error)")
+            return nil
+        }
+        
+        if bootableDisks.isEmpty {
+            if let startupDiskInfo = process(path: "/usr/sbin/diskutil", arguments: ["info", "-plist", "/"]) {
+                if let data = startupDiskInfo.data(using: .utf8),
+                   let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] {
+                    var bootDisk = disk_s()
+                    if let id = plist["DiskUUID"] as? String {
+                        bootDisk.id = id
+                    } else if let deviceNode = plist["DeviceNode"] as? String {
+                        bootDisk.id = deviceNode
+                    }
+                    if let volumeName = plist["VolumeName"] as? String {
+                        bootDisk.name = volumeName
+                    }
+                    if let totalSize = plist["TotalSize"] as? Int64 {
+                        bootDisk.size = totalSize
+                    }
+                    if bootDisk.id != nil {
+                        bootableDisks.append(bootDisk)
+                    }
+                }
+            }
+        }
+        
+        return bootableDisks
+    }
+    
     private func getFrequencies(cpuName: String) -> ([Int32], [Int32])? {
         var iterator = io_iterator_t()
-        let result = IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching("AppleARMIODevice"), &iterator)
+        let result = IOServiceGetMatchingServices(
+            kIOMainPortDefault,
+            IOServiceMatching("AppleARMIODevice"),
+            &iterator
+        )
         if result != kIOReturnSuccess {
             print("Error find AppleARMIODevice: " + (String(cString: mach_error_string(result), encoding: String.Encoding.ascii) ?? "unknown error"))
             return nil
@@ -466,46 +598,46 @@ public class SystemKit {
         return nil
     }
     
-//    private func getIcon(type: deviceType, year: Int) -> NSImage {
-//        switch type {
-//        case .macMini:
-//            if year >= 2024 {
-//                return NSImage(named: NSImage.Name("macMini2024"))!
-//            }
-//            if year >= 2020 && year <= 2023 {
-//                return NSImage(named: NSImage.Name("macMini2020"))!
-//            }
-//            return NSImage(named: NSImage.Name("macMini"))!
-//        case .macStudio:
-//            return NSImage(named: NSImage.Name("macStudio"))!
-//        case .iMacPro:
-//            return NSImage(named: NSImage.Name("imacPro"))!
-//        case .macPro:
-//            switch year {
-//            case 2019:
-//                return NSImage(named: NSImage.Name("macPro2019"))!
-//            default:
-//                return NSImage(named: NSImage.Name("macPro"))!
-//            }
-//        case .iMac:
-//            return NSImage(named: NSImage.Name("imac"))!
-//        case .macbook:
-//            return NSImage(named: NSImage.Name("macbookAir"))!
-//        case .macbookAir:
-//            if year >= 2022 {
-//                return NSImage(named: NSImage.Name("macbookAir"))!
-//            }
-//            return NSImage(named: NSImage.Name("macbookAir4thGen"))!
-//        case .macbookPro:
-//            if year >= 2021 {
-//                return NSImage(named: NSImage.Name("macbookPro5thGen"))!
-//            }
-//            return NSImage(named: NSImage.Name("macbookPro"))!
-//        default:
-//            return NSImage(named: NSImage.Name("imacPro"))!
-//        }
-//    }
-//    
+    private func getIcon(type: deviceType, year: Int) -> NSImage {
+        switch type {
+        case .macMini:
+            if year >= 2024 {
+                return NSImage(named: NSImage.Name("macMini2024"))!
+            }
+            if year >= 2020 && year <= 2023 {
+                return NSImage(named: NSImage.Name("macMini2020"))!
+            }
+            return NSImage(named: NSImage.Name("macMini"))!
+        case .macStudio:
+            return NSImage(named: NSImage.Name("macStudio"))!
+        case .iMacPro:
+            return NSImage(named: NSImage.Name("imacPro"))!
+        case .macPro:
+            switch year {
+            case 2019:
+                return NSImage(named: NSImage.Name("macPro2019"))!
+            default:
+                return NSImage(named: NSImage.Name("macPro"))!
+            }
+        case .iMac:
+            return NSImage(named: NSImage.Name("imac"))!
+        case .macbook:
+            return NSImage(named: NSImage.Name("macbookAir"))!
+        case .macbookAir:
+            if year >= 2022 {
+                return NSImage(named: NSImage.Name("macbookAir"))!
+            }
+            return NSImage(named: NSImage.Name("macbookAir4thGen"))!
+        case .macbookPro:
+            if year >= 2021 {
+                return NSImage(named: NSImage.Name("macbookPro5thGen"))!
+            }
+            return NSImage(named: NSImage.Name("macbookPro"))!
+        default:
+            return NSImage(named: NSImage.Name("imacPro"))!
+        }
+    }
+    
     private func getModel() -> model_s? {
         guard let res = process(path: "/usr/sbin/system_profiler", arguments: ["SPHardwareDataType", "-json"]) else {
             return nil
@@ -522,7 +654,7 @@ public class SystemKit {
                     name: "\(name) (\(cpu.removedRegexMatches(pattern: "Apple ", replaceWith: "")))",
                     year: year,
                     type: type,
-//                    icon: self.getIcon(type: type, year: year)
+                    icon: self.getIcon(type: type, year: year)
                 )
             }
         } catch let err as NSError {
@@ -585,6 +717,13 @@ public class SystemKit {
 
 let deviceDict: [String: model_s] = [
     // Mac Mini
+    "Macmini1,1": model_s(name: "Mac mini", year: 2006, type: .macMini),
+    "Macmini2,1": model_s(name: "Mac mini", year: 2007, type: .macMini),
+    "Macmini3,1": model_s(name: "Mac mini", year: 2009, type: .macMini),
+    "Macmini4,1": model_s(name: "Mac mini", year: 2010, type: .macMini),
+    "Macmini5,1": model_s(name: "Mac mini", year: 2011, type: .macMini),
+    "Macmini5,2": model_s(name: "Mac mini", year: 2011, type: .macMini),
+    "Macmini5,3": model_s(name: "Mac mini", year: 2011, type: .macMini),
     "Macmini6,1": model_s(name: "Mac mini", year: 2012, type: .macMini),
     "Macmini6,2": model_s(name: "Mac mini", year: 2012, type: .macMini),
     "Macmini7,1": model_s(name: "Mac mini", year: 2014, type: .macMini),
@@ -600,24 +739,40 @@ let deviceDict: [String: model_s] = [
     "Mac13,2": model_s(name: "Mac Studio (M1 Ultra)", year: 2022, type: .macStudio),
     "Mac14,13": model_s(name: "Mac Studio (M2 Max)", year: 2023, type: .macStudio),
     "Mac14,14": model_s(name: "Mac Studio (M2 Ultra)", year: 2023, type: .macStudio),
+    "Mac15,14": model_s(name: "Mac Studio (M3 Max)", year: 2023, type: .macStudio),
+    "Mac16,9": model_s(name: "Mac Studio (M4 Max)", year: 2024, type: .macStudio),
     
     // Mac Pro
+    "MacPro1,1": model_s(name: "Mac Pro", year: 2006, type: .macPro),
+    "MacPro2,1": model_s(name: "Mac Pro", year: 2007, type: .macPro),
+    "MacPro3,1": model_s(name: "Mac Pro", year: 2008, type: .macPro),
+    "MacPro4,1": model_s(name: "Mac Pro", year: 2009, type: .macPro),
     "MacPro5,1": model_s(name: "Mac Pro", year: 2010, type: .macPro),
     "MacPro6,1": model_s(name: "Mac Pro", year: 2016, type: .macPro),
     "MacPro7,1": model_s(name: "Mac Pro", year: 2019, type: .macPro),
     "Mac14,8": model_s(name: "Mac Pro (M2 Ultra)", year: 2023, type: .macPro),
     
     // iMac
-    "iMac12,1": model_s(name: "iMac 27-Inch", year: 2011, type: .iMac),
+    "iMac10,1": model_s(name: "iMac 21.5-Inch", year: 2009, type: .iMac),
+    "iMac11,2": model_s(name: "iMac 21.5-Inch", year: 2010, type: .iMac),
+    "iMac11,3": model_s(name: "iMac 27-Inch", year: 2010, type: .iMac),
+    "iMac12,1": model_s(name: "iMac 21.5-Inch", year: 2011, type: .iMac),
+    "iMac12,2": model_s(name: "iMac 27-Inch", year: 2011, type: .iMac),
     "iMac13,1": model_s(name: "iMac 21.5-Inch", year: 2012, type: .iMac),
     "iMac13,2": model_s(name: "iMac 27-Inch", year: 2012, type: .iMac),
+    "iMac14,1": model_s(name: "iMac 21.5-Inch", year: 2013, type: .iMac),
     "iMac14,2": model_s(name: "iMac 27-Inch", year: 2013, type: .iMac),
+    "iMac14,3": model_s(name: "iMac 21.5-Inch", year: 2013, type: .iMac),
+    "iMac14,4": model_s(name: "iMac 21.5-Inch", year: 2014, type: .iMac),
     "iMac15,1": model_s(name: "iMac 27-Inch", year: 2014, type: .iMac),
+    "iMac16,1": model_s(name: "iMac 21.5-Inch", year: 2015, type: .iMac),
+    "iMac16,2": model_s(name: "iMac 21.5-Inch", year: 2015, type: .iMac),
     "iMac17,1": model_s(name: "iMac 27-Inch", year: 2015, type: .iMac),
     "iMac18,1": model_s(name: "iMac 21.5-Inch", year: 2017, type: .iMac),
     "iMac18,2": model_s(name: "iMac 21.5-Inch", year: 2017, type: .iMac),
     "iMac18,3": model_s(name: "iMac 27-Inch", year: 2017, type: .iMac),
     "iMac19,1": model_s(name: "iMac 27-Inch", year: 2019, type: .iMac),
+    "iMac19,2": model_s(name: "iMac 21.5-Inch", year: 2019, type: .iMac),
     "iMac20,1": model_s(name: "iMac 27-Inch", year: 2020, type: .iMac),
     "iMac20,2": model_s(name: "iMac 27-Inch", year: 2020, type: .iMac),
     "iMac21,1": model_s(name: "iMac 24-Inch (M1)", year: 2021, type: .iMac),
@@ -636,6 +791,12 @@ let deviceDict: [String: model_s] = [
     "MacBook10,1": model_s(name: "MacBook", year: 2017, type: .macbook),
     
     // MacBook Air
+    "MacBookAir1,1": model_s(name: "MacBook Air 13\"", year: 2008, type: .macbookAir),
+    "MacBookAir2,1": model_s(name: "MacBook Air 13\"", year: 2009, type: .macbookAir),
+    "MacBookAir3,1": model_s(name: "MacBook Air 11\"", year: 2010, type: .macbookAir),
+    "MacBookAir3,2": model_s(name: "MacBook Air 13\"", year: 2010, type: .macbookAir),
+    "MacBookAir4,1": model_s(name: "MacBook Air 11\"", year: 2011, type: .macbookAir),
+    "MacBookAir4,2": model_s(name: "MacBook Air 13\"", year: 2011, type: .macbookAir),
     "MacBookAir5,1": model_s(name: "MacBook Air 11\"", year: 2012, type: .macbookAir),
     "MacBookAir5,2": model_s(name: "MacBook Air 13\"", year: 2012, type: .macbookAir),
     "MacBookAir6,1": model_s(name: "MacBook Air 11\"", year: 2014, type: .macbookAir),
@@ -647,9 +808,28 @@ let deviceDict: [String: model_s] = [
     "MacBookAir9,1": model_s(name: "MacBook Air 13\"", year: 2020, type: .macbookAir),
     "MacBookAir10,1": model_s(name: "MacBook Air 13\" (M1)", year: 2020, type: .macbookAir),
     "Mac14,2": model_s(name: "MacBook Air 13\" (M2)", year: 2022, type: .macbookAir),
-    "Mac14,15": model_s(name: "MacBook Air 15\" (M2)", year: 2022, type: .macbookAir),
+    "Mac14,15": model_s(name: "MacBook Air 15\" (M2)", year: 2023, type: .macbookAir),
+    "Mac15,12": model_s(name: "MacBook Air 13\" (M3)", year: 2024, type: .macbookAir),
+    "Mac15,13": model_s(name: "MacBook Air 15\" (M3)", year: 2024, type: .macbookAir),
     
     // MacBook Pro
+    "MacBookPro1,1": model_s(name: "MacBook Pro 15\"", year: 2006, type: .macbookPro),
+    "MacBookPro1,2": model_s(name: "MacBook Pro 17\"", year: 2006, type: .macbookPro),
+    "MacBookPro2,1": model_s(name: "MacBook Pro 17\"", year: 2006, type: .macbookPro),
+    "MacBookPro2,2": model_s(name: "MacBook Pro 15\"", year: 2006, type: .macbookPro),
+    "MacBookPro3,1": model_s(name: "MacBook Pro", year: 2007, type: .macbookPro),
+    "MacBookPro4,1": model_s(name: "MacBook Pro", year: 2008, type: .macbookPro),
+    "MacBookPro5,1": model_s(name: "MacBook Pro 15\"", year: 2008, type: .macbookPro),
+    "MacBookPro5,2": model_s(name: "MacBook Pro 17\"", year: 2009, type: .macbookPro),
+    "MacBookPro5,3": model_s(name: "MacBook Pro 15\"", year: 2009, type: .macbookPro),
+    "MacBookPro5,4": model_s(name: "MacBook Pro 15\"", year: 2009, type: .macbookPro),
+    "MacBookPro5,5": model_s(name: "MacBook Pro 13\"", year: 2009, type: .macbookPro),
+    "MacBookPro6,1": model_s(name: "MacBook Pro 17\"", year: 2010, type: .macbookPro),
+    "MacBookPro6,2": model_s(name: "MacBook Pro 15\"", year: 2010, type: .macbookPro),
+    "MacBookPro7,1": model_s(name: "MacBook Pro 13\"", year: 2010, type: .macbookPro),
+    "MacBookPro8,1": model_s(name: "MacBook Pro 13\"", year: 2011, type: .macbookPro),
+    "MacBookPro8,2": model_s(name: "MacBook Pro 15\"", year: 2011, type: .macbookPro),
+    "MacBookPro8,3": model_s(name: "MacBook Pro 17\"", year: 2011, type: .macbookPro),
     "MacBookPro9,1": model_s(name: "MacBook Pro 15\"", year: 2012, type: .macbookPro),
     "MacBookPro9,2": model_s(name: "MacBook Pro 13\"", year: 2012, type: .macbookPro),
     "MacBookPro10,1": model_s(name: "MacBook Pro 15\"", year: 2012, type: .macbookPro),
@@ -705,5 +885,6 @@ let osDict: [String: String] = [
     "12": "Monterey",
     "13": "Ventura",
     "14": "Sonoma",
-    "15": "Sequoia"
+    "15": "Sequoia",
+    "26": "Tahoe"
 ]

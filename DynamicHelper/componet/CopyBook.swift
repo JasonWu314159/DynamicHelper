@@ -135,21 +135,13 @@ struct CopyBook: View {
                                 .frame(maxHeight: .infinity)
                                 .foregroundStyle(.gray.opacity(0.5))
                         }.id(Strings.containID)
-                        Circle()
+                        
+                        Image(systemName: "plus")
                             .id(Strings.Item.count*3)
+                            .font(.system(size: 17))
+                            .foregroundStyle(.white)
                             .frame(width: 35, height: 35)
-                            .foregroundStyle(AddButtonIsHover ? .gray.opacity(0.3) :.black)
-                            .overlay(
-                                Image(systemName: "plus")
-                                    .font(.system(size: 17))
-                                    .foregroundStyle(.white)
-                            )
-                            .onHover{ isHovering in
-                                withAnimation(.easeInOut(duration: 0.2)){
-                                    AddButtonIsHover = isHovering
-                                }
-                            }
-                            .onTapGesture {
+                            .hoverPressEffect(CR: 35) {
                                 StringStorage.shared.Item.append(("",false))
                                 Strings.containID = UUID()
                             }
@@ -164,7 +156,7 @@ struct CopyBook: View {
                 }
                 .inspect { (nsScrollView: NSScrollView) in
                     nsScrollView.hasHorizontalScroller = false
-                    nsScrollView.hasVerticalScroller = true
+                    nsScrollView.hasVerticalScroller = false
                 }
             }
         }
@@ -191,7 +183,7 @@ struct CopyBook_Previews:View {
     var body: some View {
         ZStack{
             VStack{
-                MarqueeText(text: previews, speed: 0.05, delay: 0.5,font: .system(size: 15))
+                MarqueeText(text: previews, speed: 20, delay: 0.5,font: .system(size: 15))
                     .padding(.vertical,0)
                     .allowsHitTesting(false)
                 HStack(spacing:0){

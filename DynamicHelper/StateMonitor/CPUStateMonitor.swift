@@ -252,7 +252,6 @@ public class TemperatureReader {
         }
         
         self.Temperature = temperature
-        print(self.Temperature)
         return self.Temperature
     }
 }

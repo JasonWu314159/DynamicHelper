@@ -218,15 +218,12 @@ public struct Sensor: Sensor_p, Codable {
     }
     
     public var state: Bool {
-//        Store.shared.bool(key: "sensor_\(self.key)", defaultValue: false)
         false
     }
     public var popupState: Bool {
-//        Store.shared.bool(key: "sensor_\(self.key)_popup", defaultValue: true)
         true
     }
     public var notificationThreshold: String {
-//        Store.shared.string(key: "sensor_\(self.key)_notification", defaultValue: "")
         ""
     }
     
@@ -449,7 +446,7 @@ internal let SensorsList: [Sensor] = [
     Sensor(key: "PU1R", name: "Thunderbolt Left", group: .sensor, type: .power, platforms: Platform.all),
     Sensor(key: "PU2R", name: "Thunderbolt Right", group: .sensor, type: .power, platforms: Platform.all),
     
-    Sensor(key: "PDBR", name: "Power Delivery Brightness", group: .sensor, type: .power, platforms: [.m1, .m1Pro, .m1Max, .m1Ultra])
+    Sensor(key: "PDBR", name: "Power Delivery Brightness", group: .sensor, type: .power, platforms: [.m1, .m1Pro, .m1Max, .m1Ultra, .m4, .m4Pro, .m4Max, .m4Ultra])
 ]
 
 internal let HIDSensorsList: [Sensor] = [
@@ -468,6 +465,3 @@ internal let HIDSensorsList: [Sensor] = [
     Sensor(key: "gas gauge battery", name: "Battery", group: .sensor, type: .temperature, platforms: Platform.all),
     Sensor(key: "NAND CH% temp", name: "Disk %s", group: .GPU, type: .temperature, platforms: Platform.all)
 ]
-
-
-

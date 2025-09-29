@@ -335,7 +335,7 @@ class NetStateMonitor: CWEventDelegate {
         
         self.usage.bandwidth.upload = current.upload
         self.usage.bandwidth.download = current.download
-        print(self.usage)
+//        print(self.usage)
         
     }
     

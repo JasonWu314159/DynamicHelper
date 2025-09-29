@@ -13,19 +13,19 @@ struct ClockView: View {
     @State private var date = Date()
     @State private var timerCancellable: Cancellable? = nil
     @State private var isHovering: Bool = false
+    @State private var size:CGFloat = 0
     
 
     var body: some View {
         GeometryReader { geometry in
-            let size = min(geometry.size.width, geometry.size.height)
             let h_size = size/2
             let radius = h_size * 0.7
             
             ZStack {
                 // 畫數字
-                RoundedRectangle(cornerRadius: size*0.2)
-                    .fill(isHovering && !islandTypeManager.checkNowIslandTypeIs(.Clock) ? .gray.opacity(0.2) : .clear)
-                    .frame(width: size*0.95, height: size*0.95)
+//                RoundedRectangle(cornerRadius: size*0.2)
+//                    .fill(isHovering && !islandTypeManager.checkNowIslandTypeIs(.Clock) ? .gray.opacity(0.2) : .clear)
+//                    .frame(width: size*0.95, height: size*0.95)
                 
                 
                 ForEach(1...12, id: \.self) { i in
@@ -55,27 +55,41 @@ struct ClockView: View {
                     .frame(width: 8, height: 8)
             }
             .frame(width: size, height: size)
+            .onAppear{
+                size = min(geometry.size.width, geometry.size.height)
+            }
+            .hoverPressEffect(HBG:0.2,PBG:0.1,HS:1,CR:size*0.2) {
+                if(NSEvent.modifierFlags.contains(.command)){
+                    openClockApp()
+                    return
+                }else{
+    //                windowState.outsideChange = .Clock
+                }
+            }
+//            .padding()
+            
         }
+        .padding(.trailing,10)
         .aspectRatio(1, contentMode: .fit)
         .onAppear { initTimer() }
         .onDisappear {
             timerCancellable?.cancel()
             timerCancellable = nil
         }
-        .contentShape(Rectangle())
-        .onTapGesture{
-            if(NSEvent.modifierFlags.contains(.command)){
-                openClockApp()
-                return
-            }else{
-//                windowState.outsideChange = .Clock
-            }
-        }
-        .onHover { isHover in
-            withAnimation(.linear(duration: 0.2)) {
-                isHovering = isHover
-            }
-        }
+//        .contentShape(Rectangle())
+//        .onTapGesture{
+//            if(NSEvent.modifierFlags.contains(.command)){
+//                openClockApp()
+//                return
+//            }else{
+////                windowState.outsideChange = .Clock
+//            }
+//        }
+//        .onHover { isHover in
+//            withAnimation(.linear(duration: 0.2)) {
+//                isHovering = isHover
+//            }
+//        }
     }
     
     func initTimer(){

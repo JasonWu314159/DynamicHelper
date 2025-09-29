@@ -14,7 +14,9 @@ class IslandTypeManager: ObservableObject {
     static let StandardSizeLevel:Int = 10
     enum IslandType:String, Codable{
         case hide
+        case onLogin
         case onMusicPlaying
+        case onMusicChanging
         case onCharge
         case gameMode
         case exten
@@ -26,7 +28,7 @@ class IslandTypeManager: ObservableObject {
         
         var level: Int {
             switch self {
-            case .onMusicPlaying:return IslandTypeManager.StandardSizeLevel-3
+            case .onMusicPlaying,.onLogin,.onMusicChanging:return IslandTypeManager.StandardSizeLevel-3
             case .onCharge, .RemoteControl: return IslandTypeManager.StandardSizeLevel-2
             case .gameMode: return IslandTypeManager.StandardSizeLevel-1
             case .exten, .Drop, .Clock, .Hardware: return IslandTypeManager.StandardSizeLevel
@@ -38,10 +40,12 @@ class IslandTypeManager: ObservableObject {
     
     static private let WindowSize:[IslandType:(width:CGFloat,height:CGFloat,downRadius:CGFloat,upRadius:CGFloat)] = [
         .hide:(width:0,height:0,downRadius:11,upRadius:6),
-        .onMusicPlaying:(width:70,height:1,downRadius:11,upRadius:6),
-        .onCharge:(width:210,height:1,downRadius:11,upRadius:6),
-        .RemoteControl:(width:210,height:1,downRadius:11,upRadius:6),
-        .gameMode:(width:300,height:1,downRadius:11,upRadius:6),
+        .onMusicPlaying:(width:70,height:2,downRadius:13,upRadius:8),
+        .onMusicChanging:(width:70,height:20,downRadius:13,upRadius:8),
+        .onLogin:(width:70,height:1,downRadius:13,upRadius:8),
+        .onCharge:(width:210,height:1,downRadius:13,upRadius:8),
+        .RemoteControl:(width:210,height:1,downRadius:13,upRadius:8),
+        .gameMode:(width:300,height:1,downRadius:13,upRadius:8),
         .exten:(width:410,height:168,downRadius:25,upRadius:20),
         .Drop:(width:410,height:168,downRadius:25,upRadius:20),
         .Clock:(width:410,height:168,downRadius:25,upRadius:20),
@@ -67,10 +71,14 @@ class IslandTypeManager: ObservableObject {
     
     private var islandViewChangeQueue:[outsideChangeInfo] = []
     
-    static var Resize:CGFloat {
+    static var NotchHeight:CGFloat {
         let screen = getNowScreen()
         let safeAreaInsets = screen.safeAreaInsets
-        return hasNotch ? safeAreaInsets.top/32 : 1
+        return safeAreaInsets.top
+    }
+    
+    static var Resize:CGFloat {
+        return hasNotch ? NotchHeight/32 : 1
     }
 
     static var hasNotch:Bool{

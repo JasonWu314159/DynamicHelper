@@ -67,10 +67,10 @@ struct MusicView: View {
                 .offset(x:(geometry.size.width-width)/2)
                 .frame(width:  width,height: height)
             }
-            MarqueeText(text: TrackName, speed: 0.05, delay: 0.5,font: .system(size: 13))
+            MarqueeText(text: TrackName, speed: 20, delay: 0.5,font: .system(size: 13))
                 .padding(.horizontal)
                 .padding(.top,5)
-            MarqueeText(text: ArtistAndAlbumName, speed: 0.05, delay: 0.5, TextColor: Color.gray,font: .system(size: 10))
+            MarqueeText(text: ArtistAndAlbumName, speed: 20, delay: 0.5, TextColor: Color.gray,font: .system(size: 10))
                 .padding(.horizontal)
                 .padding(.bottom,5)
             SliderBar(progress:$progress,isDragging: $handleMusicPlaybackStateChange)
@@ -161,6 +161,7 @@ struct MusicView: View {
             let (a,b,c) = getMusicInfoViaShell()
             if a == "-" && !isPlay{updateMusicInfo();return}
             isPlay = isMusicPlaying() ?? false
+            totalTime = getCurrentTrackDuration()
             currentTime = getMusicPlaybackPosition()
             progress = totalTime==0 ? 0 : currentTime / totalTime
             if a == TrackName {updateMusicInfo();return}
@@ -172,7 +173,6 @@ struct MusicView: View {
             if "\(b)\(center)\(c)" != ArtistAndAlbumName {
                 ArtistAndAlbumName = "\(b)\(center)\(c)"
             }
-            totalTime = getCurrentTrackDuration()
             if let img = loadMusicArtworkImage() {
                 artwork = img
             }

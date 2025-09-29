@@ -143,7 +143,7 @@ class RAMStateMonitor {
                 swapouts: swapouts
             )
             
-            print("RAM read success")
+//            print("RAM read success")
 //            print(self.RAMUsage ?? "")
             return self.RAMUsage
         }

@@ -138,7 +138,7 @@ struct ComputerButton:View{
                 .frame(width: 40, height: 40)
                 .scaledToFit()
             VStack{
-                MarqueeText(text: ComputerInfo.name, speed: 0.05, delay: 0.5,TextColor: .black, font: .system(size: 20), fontWeight: .bold)
+                MarqueeText(text: ComputerInfo.name, speed: 20, delay: 0.5,TextColor: .black, font: .system(size: 20), fontWeight: .bold)
                 Text(ComputerInfo.ip)
                     .font(.system(size: 12))
             }.frame(maxWidth: .infinity)

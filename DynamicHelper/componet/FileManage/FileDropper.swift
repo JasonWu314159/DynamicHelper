@@ -120,7 +120,7 @@ struct FileInfoView: View  {
                     .frame(width: 50, height: 50)
                     .cornerRadius(6)
                 ZStack{
-                    MarqueeText(text: file.RealUrl.lastPathComponent, speed: 0.05, delay: 0.5,font: .system(size: 13))
+                    MarqueeText(text: file.RealUrl.lastPathComponent, speed: 20, delay: 0.5,font: .system(size: 13))
                         .padding(.vertical,0)
                         .allowsHitTesting(false)
                     Color.clear

@@ -105,7 +105,7 @@ class BatteryMonitor {
                     self.usage.chargingVoltage = chargerData["ChargingVoltage"] as? Int ?? 0
                 }
                 
-                print(self.usage)
+//                print(self.usage)
                 return self.usage
             }
         }

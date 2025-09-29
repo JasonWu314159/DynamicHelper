@@ -29,6 +29,10 @@ struct UsageTypeBoard: View {
     var label: String      // 中間顯示的文字
     var lineWidth: CGFloat
     var backgroundColor: Color
+    var onTap: (() -> Void)?
+    
+    @State private var isHover: Bool = false
+    @State private var isPressed: Bool = false
     
     private var EmptyStartValue: Double{
         var sum:Double = 0
@@ -40,11 +44,12 @@ struct UsageTypeBoard: View {
         else {return sum}
     }
     
-    init(usageType: [UsageType], label: String, lineWidth: CGFloat = 14, backgroundColor: Color = .gray.opacity(0.5)){
+    init(usageType: [UsageType], label: String, lineWidth: CGFloat = 17, backgroundColor: Color = .gray.opacity(0.6),action: (() -> Void)? = nil){
         self.usageType = usageType
         self.label = label
         self.lineWidth = lineWidth
         self.backgroundColor = backgroundColor
+        self.onTap = action
         
         var accumulation: Double = 0
         for i in 0..<self.usageType.count{
@@ -58,18 +63,24 @@ struct UsageTypeBoard: View {
 
     var body: some View {
         ZStack {
-            ZStack {
-                ForEach(usageType, id: \.id) { type in
-                    SectorShape(startAngle: .degrees(360)*type.accumulation, endAngle: .degrees(360)*(type.accumulation+type.value),width:lineWidth)
-                        .foregroundStyle(type.foregroundColor)
-                }
-                SectorShape(startAngle: .degrees(360)*EmptyStartValue, endAngle: .degrees(360),width:lineWidth)
-                    .foregroundStyle(backgroundColor)
-            }.rotationEffect(Angle.degrees(-90))
-            Text(label)
-                .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
+            ZStack{
+                ZStack {
+                    ForEach(usageType, id: \.id) { type in
+                        SectorShape(startAngle: .degrees(360)*type.accumulation, endAngle: .degrees(360)*(type.accumulation+type.value),width:lineWidth)
+                            .foregroundStyle(type.foregroundColor)
+                    }
+                    SectorShape(startAngle: .degrees(360)*EmptyStartValue, endAngle: .degrees(360),width:lineWidth)
+                        .foregroundStyle(backgroundColor)
+                }.rotationEffect(Angle.degrees(-90))
+                Text(label)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+            }
+            .scaleEffect(0.9)
+        }
+        .hoverPressEffect(HBG:0.2,PBG: 0.1,CR:15){
+            onTap?()
         }
     }
 }

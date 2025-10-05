@@ -23,10 +23,10 @@ struct FundationSetting:View{
                     Text("檔案").tag(IslandTypeManager.IslandType.Drop)
                 }.onAppear {
                     saveSettings()
-                    homeViewType = islandTypeManager.defaultWindowType
+                    homeViewType = IslandTypeManager.shared.defaultWindowType
                 }
                 .onChange(of: homeViewType) { _ ,newValue in
-                    islandTypeManager.defaultWindowType = newValue
+                    IslandTypeManager.shared.defaultWindowType = newValue
                     saveSettings()
                 }
                 .frame(width: 150)
@@ -46,7 +46,7 @@ struct FundationSetting:View{
                 .onChange(of: SelectWindowPos) { _ ,newValue in
                     defaultWindowPos = newValue
                     saveSettings()
-                    islandTypeManager.OutsideChangeIslandType(to: .hide,EnforceChange: true)
+                    IslandTypeManager.shared.OutsideChangeIslandType(to: .hide,EnforceChange: true)
                 }
                 .frame(width: 150)
             }

@@ -23,10 +23,6 @@ struct ClockView: View {
             
             ZStack {
                 // 畫數字
-//                RoundedRectangle(cornerRadius: size*0.2)
-//                    .fill(isHovering && !islandTypeManager.checkNowIslandTypeIs(.Clock) ? .gray.opacity(0.2) : .clear)
-//                    .frame(width: size*0.95, height: size*0.95)
-                
                 
                 ForEach(1...12, id: \.self) { i in
                     let j = getTextAngle(i)
@@ -66,7 +62,6 @@ struct ClockView: View {
     //                windowState.outsideChange = .Clock
                 }
             }
-//            .padding()
             
         }
         .padding(.trailing,10)
@@ -76,20 +71,6 @@ struct ClockView: View {
             timerCancellable?.cancel()
             timerCancellable = nil
         }
-//        .contentShape(Rectangle())
-//        .onTapGesture{
-//            if(NSEvent.modifierFlags.contains(.command)){
-//                openClockApp()
-//                return
-//            }else{
-////                windowState.outsideChange = .Clock
-//            }
-//        }
-//        .onHover { isHover in
-//            withAnimation(.linear(duration: 0.2)) {
-//                isHovering = isHover
-//            }
-//        }
     }
     
     func initTimer(){

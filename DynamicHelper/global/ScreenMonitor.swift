@@ -21,25 +21,25 @@ class ScreenMonitor {
         )
         print("🔧 螢幕監聽已啟用")
     }
-
+    
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
-
+    
     @objc private func handleScreenChange(notification: Notification) {
         print("🖥️ 螢幕設定變更")
         for (index, screen) in NSScreen.screens.enumerated() {
             print("螢幕 \(index): frame = \(screen.frame)")
         }
         DispatchQueue.main.async {
-            islandTypeManager.refreshIsland()
+            IslandTypeManager.shared.refreshIsland()
         }
         // 你也可以在這裡加上自動調整視窗或通知 AppDelegate 的邏輯
     }
     
     func refreshWindowSize(
         window: NSWindow,
-        winType:IslandTypeManager.IslandType = islandTypeManager.getNowIslandType()
+        winType:IslandTypeManager.IslandType = IslandTypeManager.shared.getNowIslandType()
     ) {
         var size = IslandTypeManager.getWindowSize(winType)
         let sizeDelta: CGFloat = IslandTypeManager.getWindowRadius(winType).up*2
@@ -47,7 +47,7 @@ class ScreenMonitor {
         refreshWindowSize(window: window, size:size)
     }
     
-    func refreshWindowSize(window: NSWindow,size: CGSize = islandTypeManager.getNowWindowSize()){
+    func refreshWindowSize(window: NSWindow,size: CGSize = IslandTypeManager.shared.getNowWindowSize()){
         let screen = getNowScreen()
         let frame = NSRect(
             origin: NSPoint(
@@ -58,4 +58,25 @@ class ScreenMonitor {
         )
         window.setFrame(frame, display: true, animate: false)
     }
+    
+    
+    
+    static func getNowScreen() -> NSScreen {
+        let Screens = getAllScreenInfo()
+        var screen:NSScreen
+        if(defaultWindowPos == -1){
+            for i in Screens{
+                if i.isBuiltin{
+                    return i.screen
+                }
+            }
+            screen = Screens[0].screen
+        }else if(defaultWindowPos < Screens.count){
+            screen = Screens[defaultWindowPos].screen
+        }else{
+            screen = Screens[Screens.count-1].screen
+        }
+        return screen
+    }
+    
 }

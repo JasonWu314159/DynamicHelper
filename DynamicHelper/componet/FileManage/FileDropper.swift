@@ -12,7 +12,7 @@ import Inspect
 
 struct DroppableIslandView: View {
     @ObservedObject var storedFiles:FileStorage = fileStorage
-    @ObservedObject var fileDropViewSpace = FileDropViewSpace
+    @ObservedObject var fileDropViewSpace = ViewSpace.FileDrop
     var width:CGFloat = 360
     var height:CGFloat = 100
     
@@ -34,7 +34,7 @@ struct DroppableIslandView: View {
                 RoundedRectangle(cornerRadius: 30)
                     .stroke(
                         Color(red: 0.5, green: 0.5, blue: 0.5),
-                        lineWidth: FileDropViewSpace.isHovering ? 10 : 5
+                        lineWidth: ViewSpace.FileDrop.isHovering ? 10 : 5
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 if(storedFiles.Files.isEmpty ){
@@ -45,10 +45,10 @@ struct DroppableIslandView: View {
             .cornerRadius(30)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onAppear {
-                FileDropViewSpace.isHovering = false
+                ViewSpace.FileDrop.isHovering = false
             }
             .onChange(of: geo.frame(in: .global)) { 
-                FileDropViewSpace.frame = geo.frame(in: .global)
+                ViewSpace.FileDrop.frame = geo.frame(in: .global)
             }
             
         }

@@ -34,7 +34,7 @@ struct BatteryView: View {
                 Image(systemName: "bolt.fill")
                     .foregroundStyle(.green)
                     .opacity(isShowingChargingIcon ? 1 : 0)
-            }else if islandTypeManager.checkNowIslandTypeIs(.onCharge){
+            }else if IslandTypeManager.shared.checkNowIslandTypeIs(.onCharge){
                 Image(systemName: "bolt.fill")
                     .foregroundStyle(.black)
             }
@@ -45,10 +45,10 @@ struct BatteryView: View {
                 PowerMonitor.openActivityMonitor()
                 return
             }else{
-                if islandTypeManager.checkNowIslandTypeIs(.Hardware){
+                if IslandTypeManager.shared.checkNowIslandTypeIs(.Hardware){
                     StatusModel.shared.setNowType(.home)
                 }else{
-                    islandTypeManager.OutsideChangeIslandType(to: .Hardware)
+                    IslandTypeManager.shared.OutsideChangeIslandType(to: .Hardware)
                 }
             }
         }
@@ -56,7 +56,7 @@ struct BatteryView: View {
         .frame(height: IslandTypeManager.NotchHeight)
         .onAppear {
             startMonitoring()
-            if islandTypeManager.checkNowIslandTypeIs(.onCharge){
+            if IslandTypeManager.shared.checkNowIslandTypeIs(.onCharge){
                 if isPluggedIn{
                     isShowingChargingIcon = false
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
@@ -71,8 +71,8 @@ struct BatteryView: View {
         .contextMenu {
             ForEach(StatusModel.statusType.allCases) { infoLabel in
                 Button(){
-                    if !islandTypeManager.checkNowIslandTypeIs(.Hardware){
-                        islandTypeManager.OutsideChangeIslandType(to: .Hardware)
+                    if !IslandTypeManager.shared.checkNowIslandTypeIs(.Hardware){
+                        IslandTypeManager.shared.OutsideChangeIslandType(to: .Hardware)
                     }
                     withAnimation{
                         StatusModel.shared.setNowType(infoLabel)

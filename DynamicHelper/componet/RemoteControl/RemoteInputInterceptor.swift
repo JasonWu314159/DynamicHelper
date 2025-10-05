@@ -87,8 +87,8 @@ class RemoteInputInterceptor {
         runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap, 0)
         CFRunLoopAddSource(CFRunLoopGetMain(), runLoopSource, .commonModes)
         CGEvent.tapEnable(tap: eventTap, enable: true)
-        lastTimeIslandType = islandTypeManager.getNowIslandType()
-        islandTypeManager.OutsideChangeIslandType(to: .RemoteControl)
+        lastTimeIslandType = IslandTypeManager.shared.getNowIslandType()
+        IslandTypeManager.shared.OutsideChangeIslandType(to: .RemoteControl)
         isControling = true
         rememberCurrentInputSource()
         _ = SwitchToABC()
@@ -216,7 +216,7 @@ class RemoteInputInterceptor {
 
     func stopControl() {
         CGAssociateMouseAndMouseCursorPosition(1)
-        islandTypeManager.OutsideChangeIslandType(to: lastTimeIslandType)
+        IslandTypeManager.shared.OutsideChangeIslandType(to: lastTimeIslandType)
         if let source = runLoopSource {
             CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
         }

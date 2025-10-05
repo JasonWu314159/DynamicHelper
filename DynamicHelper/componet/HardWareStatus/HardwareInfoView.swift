@@ -22,7 +22,7 @@ struct HardwareInfoView: View {
     @State private var lastDownloadBytes: Int64?
     
     var body: some View {
-        HStack(spacing: 15) {
+        HStack(spacing: 10) {
             UsageTypeBoard(usageType:CPU_UsageTypes,label:"CPU\n\(String(format: "%.1f%%", cpuLoad.totalUsage * 100))"){
                 if(NSEvent.modifierFlags.contains(.command)){
                     PowerMonitor.openActivityMonitor()
@@ -31,9 +31,8 @@ struct HardwareInfoView: View {
                     StatusModel.shared.setNowType(.CPU)
                 }
             }
-                .frame(width: 110, height: 110)
             
-            UsageTypeBoard(usageType:[UsageType(gpuLoad.first?.utilization ?? 0)],label:"GPU\n\(String(format: "%.1f%%", (gpuLoad.first?.utilization ?? 0) * 100))"){
+            UsageTypeBoard(usageType:[UsageType(gpuLoad.first?.utilization ?? 0, name:"已使用")],label:"GPU\n\(String(format: "%.1f%%", (gpuLoad.first?.utilization ?? 0) * 100))"){
                 if(NSEvent.modifierFlags.contains(.command)){
                     PowerMonitor.openActivityMonitor()
                     return
@@ -41,7 +40,6 @@ struct HardwareInfoView: View {
                     StatusModel.shared.setNowType(.GPU)
                 }
             }
-                .frame(width: 110, height: 110)
 
             UsageTypeBoard(usageType:RAM_UsageTypes,label:"RAM\n\(String(format: "%.1f%%", (ramLoad?.used ?? 0) / (ramLoad?.total ?? 1) * 100))"){
                 if(NSEvent.modifierFlags.contains(.command)){
@@ -51,7 +49,6 @@ struct HardwareInfoView: View {
                     StatusModel.shared.setNowType(.RAM)
                 }
             }
-                .frame(width: 110, height: 110)
 
             VStack(spacing: 12) {
                 
@@ -128,18 +125,18 @@ struct HardwareInfoView: View {
     }
     
     func UpdateHardwareInfo()  {
-        if !islandTypeManager.checkNowIslandTypeIs(.Hardware) || StatusModel.shared.nowType != .home{stopMonitoring(); return}
+        if !IslandTypeManager.shared.checkNowIslandTypeIs(.Hardware) || StatusModel.shared.nowType != .home{stopMonitoring(); return}
 
         
         cpuLoad = CPULoadReader.shared.read() ?? CPU_Load()
-        CPU_UsageTypes = [UsageType(cpuLoad.systemLoad,.red),UsageType(cpuLoad.userLoad,.blue)]
+        CPU_UsageTypes = [UsageType(cpuLoad.systemLoad,.red, name:"系統"),UsageType(cpuLoad.userLoad,.blue, name:"使用者")]
         
         gpuLoad = GPUsInfoReader.shared.read() ?? []
     
         
         guard let ramLoad = RAMStateMonitor.shared.read() else{ return }
         self.ramLoad = ramLoad
-        RAM_UsageTypes = [UsageType(ramLoad.app / ramLoad.total,.blue),UsageType(ramLoad.wired / ramLoad.total,.orange),UsageType(ramLoad.compressed / ramLoad.total,.red)]
+        RAM_UsageTypes = [UsageType(ramLoad.app / ramLoad.total,.blue, name:"App"),UsageType(ramLoad.wired / ramLoad.total,.orange, name:"核心"),UsageType(ramLoad.compressed / ramLoad.total,.red, name:"已壓縮")]
         
         
         

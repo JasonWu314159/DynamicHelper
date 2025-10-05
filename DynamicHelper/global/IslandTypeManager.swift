@@ -11,6 +11,8 @@ import AppKit
 
 
 class IslandTypeManager: ObservableObject {
+    static let shared = IslandTypeManager()
+    
     static let StandardSizeLevel:Int = 10
     enum IslandType:String, Codable{
         case hide
@@ -20,6 +22,7 @@ class IslandTypeManager: ObservableObject {
         case onCharge
         case gameMode
         case exten
+        case Music
         case Drop
         case Clock
         case Hardware
@@ -31,7 +34,7 @@ class IslandTypeManager: ObservableObject {
             case .onMusicPlaying,.onLogin,.onMusicChanging:return IslandTypeManager.StandardSizeLevel-3
             case .onCharge, .RemoteControl: return IslandTypeManager.StandardSizeLevel-2
             case .gameMode: return IslandTypeManager.StandardSizeLevel-1
-            case .exten, .Drop, .Clock, .Hardware: return IslandTypeManager.StandardSizeLevel
+            case .exten, .Drop, .Clock, .Hardware, .Music: return IslandTypeManager.StandardSizeLevel
             case .ForceFocus: return IslandTypeManager.StandardSizeLevel+1
             default: return IslandTypeManager.StandardSizeLevel-4
             }
@@ -47,6 +50,7 @@ class IslandTypeManager: ObservableObject {
         .RemoteControl:(width:210,height:1,downRadius:13,upRadius:8),
         .gameMode:(width:300,height:1,downRadius:13,upRadius:8),
         .exten:(width:410,height:168,downRadius:25,upRadius:20),
+        .Music:(width:410,height:168,downRadius:25,upRadius:20),
         .Drop:(width:410,height:168,downRadius:25,upRadius:20),
         .Clock:(width:410,height:168,downRadius:25,upRadius:20),
         .Hardware:(width:410,height:168,downRadius:25,upRadius:20),
@@ -72,7 +76,7 @@ class IslandTypeManager: ObservableObject {
     private var islandViewChangeQueue:[outsideChangeInfo] = []
     
     static var NotchHeight:CGFloat {
-        let screen = getNowScreen()
+        let screen = ScreenMonitor.getNowScreen()
         let safeAreaInsets = screen.safeAreaInsets
         return safeAreaInsets.top
     }
@@ -82,7 +86,7 @@ class IslandTypeManager: ObservableObject {
     }
 
     static var hasNotch:Bool{
-        let screen = getNowScreen()
+        let screen = ScreenMonitor.getNowScreen()
         let safeAreaInsets = screen.safeAreaInsets
         return safeAreaInsets.top > 0
     }
@@ -100,10 +104,10 @@ class IslandTypeManager: ObservableObject {
     static func getWindowSize(_ windowType:IslandType) -> CGSize {
         var w:CGFloat = self.WindowSize[windowType]?.width ?? 0
         var h:CGFloat = WindowSize[windowType]?.height ?? 0
-        if(!hasNotch && windowType == .hide){h=1;w=getNowScreen().frame.width}
+        if(!hasNotch && windowType == .hide){h=1;w=ScreenMonitor.getNowScreen().frame.width}
         else if(!hasNotch && windowType != .hide){h += 32;w += 190}
         else {
-            let screen = getNowScreen()
+            let screen = ScreenMonitor.getNowScreen()
             let safeAreaInsets = screen.safeAreaInsets
             w += Resize < 1 && windowType != .hide ? 190 : Resize*190
             h += safeAreaInsets.top
@@ -137,14 +141,6 @@ class IslandTypeManager: ObservableObject {
     
     func OutsideChangeIslandType(outsideChange OusideChangeInfo:outsideChangeInfo, tofirst:Bool = false){
         islandViewChangeQueue.append(OusideChangeInfo)
-//        guard !isPendingOutsideChange || isTypeChanging else {
-//            if tofirst{
-//                islandViewChangeQueue.insert(OusideChangeInfo, at: 0)
-//            }else if islandViewChangeQueue.count < 1{
-//                islandViewChangeQueue.append(OusideChangeInfo)
-//            }
-//            return
-//        }
         if !isPendingOutsideChange{
             isPendingOutsideChange = true
             // 安排在下一幀執行
@@ -154,19 +150,7 @@ class IslandTypeManager: ObservableObject {
                 self.outsideChange = ChangeInfo.type
                 self.ousideChangeWithAnimate = ChangeInfo.animate
                 self.islandViewChangeQueue = []
-                
-                //            if self.outsideChange != nil {
-                //                self.islandViewChangeQueue.append(OusideChangeInfo)
-                //            } else {
-                //                self.ousideEnforceChange = OusideChangeInfo.Enforce
-                //                self.outsideChange = OusideChangeInfo.type
-                //                self.ousideChangeWithAnimate = OusideChangeInfo.animate
-                //            }
-                
-                // 下一幀已經執行完，解鎖
-//                DispatchQueue.main.async {
-                    self.isPendingOutsideChange = false
-//                }
+                self.isPendingOutsideChange = false
             }
         }
     }
@@ -199,13 +183,6 @@ class IslandTypeManager: ObservableObject {
         outsideChange = nil
         ousideEnforceChange = false
         ousideChangeWithAnimate = false 
-//        guard let first = islandViewChangeQueue.first else{
-//            return
-//        }
-//        islandViewChangeQueue.removeFirst()
-//        DispatchQueue.main.async {
-//            self.OutsideChangeIslandType(outsideChange:first, tofirst:true)
-//        }
     }
     
     func ShouldRefreshIsland() -> Bool {
@@ -223,5 +200,4 @@ class IslandTypeManager: ObservableObject {
         }
     }
 }
-var islandTypeManager:IslandTypeManager = IslandTypeManager()
 

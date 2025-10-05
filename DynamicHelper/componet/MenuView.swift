@@ -8,30 +8,24 @@
 import SwiftUI
 
 struct MenuView: View {
-    @ObservedObject private var island = islandTypeManager
+    @ObservedObject private var island = IslandTypeManager.shared
     
     var appDelegate: AppDelegate
     
     var body: some View {
         VStack{
             HStack(spacing: 0){
-#if false 
-                MenuSettingButton(systemName: "gearshape.fill")
-                    .frame(width: 32 , height: 32)
-                    .padding(.leading)
-#else
                 MenuItemButton(systemName: "gearshape.fill",onTap: {appDelegate.showSettingsWindow()})
                     .frame(width: IslandTypeManager.NotchHeight , height: IslandTypeManager.NotchHeight)
                     .padding(.leading)
-#endif
                 MenuItemButton(
-                    systemName: islandTypeManager.checkNowIslandTypeIs(.exten) ? "folder.fill" : "house.fill",
+                    systemName: island.checkNowIslandTypeIs(.exten) ? "folder.fill" : "house.fill",
                     onTap: {FolderItemButtonAction()}
                 )
                 .frame(width: IslandTypeManager.NotchHeight , height: IslandTypeManager.NotchHeight)
                 SoundController()
                     .frame(minWidth: IslandTypeManager.NotchHeight , maxHeight: IslandTypeManager.NotchHeight)
-                //Spacer(minLength: getWindowSize(.hide).width*Resize)
+                
                 Spacer()
                 MenuItemButton(systemName: "desktopcomputer.and.macbook",onTap: {appDelegate.showRemoteControlChooseWindow()}, width: 35)
                     .frame(width: IslandTypeManager.NotchHeight*1.1 , height: IslandTypeManager.NotchHeight)
@@ -44,7 +38,7 @@ struct MenuView: View {
                 BatteryView()
                     
             }.frame(height: IslandTypeManager.NotchHeight*1.2,alignment: .center)
-//            Spacer()
+
         }
     }
     

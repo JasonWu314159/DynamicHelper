@@ -70,7 +70,6 @@ class StringStorage: ObservableObject {
     }
 }
 
-//var stringStorage = StringStorage()
 
 struct CopyBookScroller: View {
     @State private var offsetX:CGFloat = 0
@@ -91,7 +90,7 @@ struct CopyBookScroller: View {
             RoundedRectangle(cornerRadius: 5)
                 .stroke(
                     Color(red: 0.5, green: 0.5, blue: 0.5),
-                    lineWidth: 0//FileDropViewSpace.isHovering ? 5 : 0
+                    lineWidth: 0
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .scaleEffect(x:1.05, y:1.1)

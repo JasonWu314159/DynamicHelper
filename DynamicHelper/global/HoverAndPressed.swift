@@ -55,27 +55,3 @@ struct HoverPressEffect: ViewModifier {
             )
     }
 }
-
-extension View {
-    func hoverPressEffectColor(HBG:Color = .gray.opacity(0.4), PBG: Color = .gray.opacity(0.3), HS:CGFloat = 1.05, CR: CGFloat = 8,BGP: CGFloat = 0, action: @escaping () -> ()) -> some View {
-        self.modifier(HoverPressEffect(
-            HoverBackground:HBG,
-            PressedBackground: PBG,
-            HoverScale: HS,
-            cornerRadius: CR, 
-            BGPadding: BGP,
-            action:action
-        ))
-    }
-    
-    func hoverPressEffect(HBG:CGFloat = 0.4, PBG: CGFloat = 0.3, HS:CGFloat = 1.05, CR: CGFloat = 8,BGP: CGFloat = 0, action: @escaping () -> ()) -> some View {
-        self.modifier(HoverPressEffect(
-            HoverBackground:.gray.opacity(HBG),
-            PressedBackground: .gray.opacity(PBG),
-            HoverScale: HS,
-            cornerRadius: CR, 
-            BGPadding: BGP,
-            action:action
-        ))
-    }
-}

@@ -24,7 +24,7 @@ struct MusicPlaying:View{
                     if let image = artwork {
                         Image(nsImage: image).resizable()
                     } else {
-                        Image("MusicDefault").resizable()
+                        AppIcon(for: "com.apple.Music").resizable()
                     }
                 }
                 .frame(width: 25, height: 25)
@@ -43,8 +43,8 @@ struct MusicPlaying:View{
                     .frame(width: 25, height: 25)
                     .padding(.bottom,10)
             }
-            .frame(height: getNowScreen().safeAreaInsets.top+1)
-            if islandTypeManager.getNowIslandType() == .onMusicChanging{
+            .frame(height: ScreenMonitor.getNowScreen().safeAreaInsets.top+1)
+            if IslandTypeManager.shared.getNowIslandType() == .onMusicChanging{
                 MarqueeText(text: TrackName,speed: 20,font: .system(size:TextSize))
                     .padding(.horizontal,5)
                     .padding(.vertical,1)
@@ -77,10 +77,10 @@ struct MusicPlaying:View{
                     center = ""
                 }
                 MusicInfo.ArtistAndAlbumName = "\(b)\(center)\(c)"
-                islandTypeManager.OutsideChangeIslandType(to: .onMusicChanging)
+                IslandTypeManager.shared.OutsideChangeIslandType(to: .onMusicChanging)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 7.0){
-                    if islandTypeManager.getNowIslandType() == .onMusicChanging{
-                        islandTypeManager.OutsideChangeIslandType(to: .onMusicPlaying)
+                    if IslandTypeManager.shared.getNowIslandType() == .onMusicChanging{
+                        IslandTypeManager.shared.OutsideChangeIslandType(to: .onMusicPlaying)
                     }
                 }
             }
@@ -93,7 +93,7 @@ struct MusicPlaying:View{
             }
             if !isPlay{
                 NoPlayingTime += 1;
-                if NoPlayingTime > 4 { islandTypeManager.OutsideChangeIslandType(to: .hide) ;return }
+                if NoPlayingTime > 4 { IslandTypeManager.shared.OutsideChangeIslandType(to: .hide) ;return }
             }else{
                 NoPlayingTime = 0
             }

@@ -110,8 +110,8 @@ var defaultWindowPos:Int = 0
 
 
 func saveSettings() {
-    UserDefaults.standard.set(islandTypeManager.defaultWindowType.rawValue, forKey: "defaultWindowType")
-    UserDefaults.standard.set(islandTypeManager.lastWindowType.rawValue, forKey: "lastWindowType")
+    UserDefaults.standard.set(IslandTypeManager.shared.defaultWindowType.rawValue, forKey: "defaultWindowType")
+    UserDefaults.standard.set(IslandTypeManager.shared.lastWindowType.rawValue, forKey: "lastWindowType")
     UserDefaults.standard.set(shouldSaveCopyBook, forKey: "shouldSaveCopyBook")
     UserDefaults.standard.set(defaultWindowPos, forKey: "defaultWindowPos")
     if(shouldSaveCopyBook){
@@ -125,7 +125,7 @@ func getSettings() {
     
     if let raw = UserDefaults.standard.string(forKey: "lastWindowType"),
        let type = IslandTypeManager.IslandType(rawValue: raw) {
-        islandTypeManager.lastWindowType = type
+        IslandTypeManager.shared.lastWindowType = type
     }
     if let raw = UserDefaults.standard.string(forKey: "defaultWindowPos"),
        let Pos = Int(raw) {
@@ -133,8 +133,8 @@ func getSettings() {
     }
     if let raw = UserDefaults.standard.string(forKey: "defaultWindowType"),
        let type = IslandTypeManager.IslandType(rawValue: raw) {
-        islandTypeManager.defaultWindowType = type
-        if(islandTypeManager.defaultWindowType != .hide){islandTypeManager.lastWindowType = islandTypeManager.defaultWindowType}
+        IslandTypeManager.shared.defaultWindowType = type
+        if(IslandTypeManager.shared.defaultWindowType != .hide){IslandTypeManager.shared.lastWindowType = IslandTypeManager.shared.defaultWindowType}
     }
     shouldSaveCopyBook = UserDefaults.standard.bool(forKey: "shouldSaveCopyBook")
     if(shouldSaveCopyBook){

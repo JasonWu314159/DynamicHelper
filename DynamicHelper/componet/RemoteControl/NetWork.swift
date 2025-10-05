@@ -286,7 +286,7 @@ class SocketServer {
 }
 
 
-func getLocalIPv4Address() -> String? {
+private func getLocalIPv4Address() -> String? {
     var address: String?
 
     var ifaddr: UnsafeMutablePointer<ifaddrs>?

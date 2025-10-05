@@ -430,7 +430,7 @@ final class VolumeListenerManager: ObservableObject {
             let v = VolumeFunc.getSystemVolume()
             self.canGetVolume = (v != nil)
             self.volume = v ?? 0
-            self.isMuted = VolumeFunc.isSystemMuted() ?? false
+            self.isMuted = VolumeFunc.isSystemMuted()
         }
     }
 }

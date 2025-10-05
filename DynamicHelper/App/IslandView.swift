@@ -9,14 +9,14 @@ import SwiftUI
 import AppKit
 
 struct IslandView: View {
-    @ObservedObject var island = islandTypeManager
+    @ObservedObject var island = IslandTypeManager.shared
     @State private var dummyState = false
     @State private var isHovering = false
     @State private var isPlayingGame: Bool = false
     @State private var isPlayingMusic: Bool = false
     @State private var mouseLocation = NSEvent.mouseLocation
-    @ObservedObject var hoverState: HoverState = HoverState()
-    var appDelegate: AppDelegate// = //AppDelegate()
+    @ObservedObject var hoverState: HoverState
+    var appDelegate: AppDelegate
     @State private var windowWidth: CGFloat = 0
     @State private var windowHeight: CGFloat = 0
     @State private var windowUpRadius: CGFloat = 0
@@ -38,7 +38,6 @@ struct IslandView: View {
                     .blur(radius: windowUpRadius/2) // 模糊模擬陰影散射
                     .frame(width: windowWidth-windowUpRadius*2, height: windowHeight+windowUpRadius)
                     .offset(y:-windowUpRadius/2)
-                //.padding(getWindowRadius(windowType.type).up)
                 
                 HStack {
                     HStack{
@@ -52,7 +51,6 @@ struct IslandView: View {
                         case .exten:
                             VStack{
                                 MenuView(appDelegate: appDelegate).id(island.NowType)
-//                                Spacer()
                                 HStack{
                                     MusicView()
                                     VStack{
@@ -61,6 +59,11 @@ struct IslandView: View {
                                     }
                                     ClockView()
                                 }.frame(maxHeight:.infinity)
+                            }.padding(.vertical,5)
+                        case .Music:
+                            VStack{
+                                MenuView(appDelegate: appDelegate).id(island.NowType)
+                                MusicView()
                             }.padding(.vertical,5)
                         case .onCharge:
                             VStack{
@@ -77,14 +80,12 @@ struct IslandView: View {
                                 HStack(spacing:0){
                                     GameModeHardwareInfoView()
                                     BatteryView()
-//                                        .background(.green)
                                 }
                                 Spacer(minLength: 0)
                             }
                         case .Drop:
                             VStack{
                                 MenuView(appDelegate: appDelegate)
-//                                Spacer()
                                 HStack(spacing:0){
                                     AirDropArea().padding(.leading)
                                     DroppableIslandView().padding(.trailing)
@@ -93,15 +94,9 @@ struct IslandView: View {
                         case .Clock:
                             VStack{
                                 MenuView(appDelegate: appDelegate)
-//                                Spacer()
                                 HStack{
                                     ClockView()
                                     Spacer()
-                                    Alarm()
-                                    Spacer()
-                                    //                                    BackTimer()
-                                    Spacer()
-                                    //                                    stopwatch()
                                 }.padding(.horizontal).frame(maxHeight:.infinity)
                             }.padding(.vertical,5)
                         case .Hardware:
@@ -124,9 +119,7 @@ struct IslandView: View {
                 .frame(width: windowWidth, height: windowHeight+IslandTypeManager.EdgeToTop)
                 .background(.black)
                 .clipShape(TopRounded(Radius: (down:windowDownRadius, up:windowUpRadius)))
-                //            .animation(nil, value: windowType.type)
                 .onAppear(){
-//                    print(defaultWindowPos)
                     island.refreshIsland()
                     startIdleKeepAlive()
                     StartMonitorTimer()
@@ -145,7 +138,6 @@ struct IslandView: View {
                     }
                 }
                 .onHover { hovering in
-//                    print("hover")
                     if(hoverState.isDragger){return}
                     if(island.isLock && !hovering){return}
                     onHoverEvent(hovering)
@@ -156,11 +148,11 @@ struct IslandView: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5)
                     {
                         withAnimation(.easeInOut(duration: 0.3)){
-                            AirDropViewSpace.isHovering = false
-                            FileDropViewSpace.isHovering = false
+                            ViewSpace.AirDrop.isHovering = false
+                            ViewSpace.FileDrop.isHovering = false
                         }
                     }
-                    return fileStorage.handleDrop(providers: providers, airDropViewSpace: AirDropViewSpace)
+                    return fileStorage.handleDrop(providers: providers, airDropViewSpace: ViewSpace.AirDrop)
                 }
             }
             .position(x: windowPosX,y: windowPosY)
@@ -169,8 +161,8 @@ struct IslandView: View {
     
     func getMousePosition(){
         mousePosition = getMousePoint()
-        AirDropViewSpace.checkHovering(mousePosition)
-        FileDropViewSpace.checkHovering(mousePosition)
+        ViewSpace.AirDrop.checkHovering(mousePosition)
+        ViewSpace.FileDrop.checkHovering(mousePosition)
         if(hoverState.isDragger){
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05)
             {
@@ -179,13 +171,13 @@ struct IslandView: View {
         }
     }
     
-    func refreshWindowSize(isAnimated:Bool = true){//type:WindowType,isAnimated:Bool = true, Enforcement:Bool = false){
+    func refreshWindowSize(isAnimated:Bool = true){
         if(!island.ShouldRefreshIsland()){island.resetOutsideChange();return}
         island.setIslandViewChangeState(isChanging: true)
         var type = island.outsideChange ?? .hide
         if type == .hide && isPlayingGame{type = .gameMode}
         let hasnotch = IslandTypeManager.hasNotch
-        let LastTypeSize = islandTypeManager.getNowWindowSize()
+        let LastTypeSize = IslandTypeManager.shared.getNowWindowSize()
         let NewTypeSize = IslandTypeManager.getWindowSize(type)
         let NewTypeRadius = IslandTypeManager.getWindowRadius(type)
         if(!hasnotch && island.checkNowIslandTypeIs(.hide)){windowWidth=1;windowHeight=1}
@@ -193,7 +185,6 @@ struct IslandView: View {
         let isToBig = IslandTypeManager.isIslandTypeToBig(from: island.getNowIslandType(), to: type)
         let animateTime:CGFloat = isAnimated ? 0.5 : 0 
         
-//        island.setIslandViewChangeState(isChanging: true)
         withAnimation(.spring(response: animateTime, dampingFraction: isToBig ? 0.5 : 0.75)){
             if(!hasnotch && type == .hide){windowWidth=NewTypeSize.width}
             else{windowWidth = NewTypeSize.width}
@@ -217,9 +208,7 @@ struct IslandView: View {
         island.resetOutsideChange()
         DispatchQueue.main.asyncAfter(deadline: .now() + animateTime*(isToBig ? 1.5 : 1)) {
             let type = island.getNowIslandType()
-//            print(type)
             let NewTypeSize = IslandTypeManager.getWindowSize(type)
-//            let NewTypeRadius = IslandTypeManager.getWindowRadius(type)
             appDelegate.update(type: type)
             windowPosX = NewTypeSize.width/2
             windowWidth = NewTypeSize.width
@@ -241,7 +230,6 @@ struct IslandView: View {
                 }else if(!h){
                     type = .hide
                 }
-//                print(type)
                 island.OutsideChangeIslandType(to: type)
             }
         }
@@ -275,12 +263,6 @@ struct IslandView: View {
         }
     }
     
-    
-//    func refreshIsland(){
-//        if island.getNowIslandType() == .hide && island.checkWeatherOusideChange(){
-//            island.refreshIsland(Animate: false)
-//        }
-//    }
     
     
     func MonitorIsPlayingGame(){
@@ -339,17 +321,3 @@ extension TopRounded: Animatable {
         set { Radius.down = newValue.first; Radius.up = newValue.second }
     }
 }
-
-
-//#Preview {
-//    VStack{
-//        MenuView()
-//        Spacer()
-//        HStack(spacing:0){
-//            AirDropArea()
-//                .background(.blue)//.padding(.leading)
-//            DroppableIslandView()
-//                .background(.blue)//.padding(.trailing)
-//        }
-//    }.padding(.vertical,5)
-//}

@@ -57,14 +57,13 @@ final class PowerMonitor {
     func monitorChargeEvent() {
         let showTime = 3.0
         ChargingStateChangeTime = Date()
-        if islandTypeManager.checkNowIslandTypeIs(.hide) {
-            islandTypeManager.OutsideChangeIslandType(to: .onCharge)
+        if IslandTypeManager.shared.checkNowIslandTypeIs(.hide) {
+            IslandTypeManager.shared.OutsideChangeIslandType(to: .onCharge)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + showTime) {
             if(Date().timeIntervalSince(self.ChargingStateChangeTime) >= showTime){
-//                print(Date().timeIntervalSince(self.ChargingStateChangeTime))
-                if islandTypeManager.checkNowIslandTypeIs(.onCharge) {
-                    islandTypeManager.OutsideChangeIslandType(to: .hide)
+                if IslandTypeManager.shared.checkNowIslandTypeIs(.onCharge) {
+                    IslandTypeManager.shared.OutsideChangeIslandType(to: .hide)
                 }
             }
         }

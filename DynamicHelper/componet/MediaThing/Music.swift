@@ -10,6 +10,7 @@ import Foundation // For DispatchQueue
 import SwiftUI
 
 struct MusicView: View {
+    @ObservedObject private var iTM : IslandTypeManager = IslandTypeManager.shared
     @State var TrackName:String = MusicInfo.TrackName
     @State var ArtistAndAlbumName:String = MusicInfo.ArtistAndAlbumName
     @State var artwork: NSImage? = MusicInfo.artwork
@@ -21,56 +22,36 @@ struct MusicView: View {
     @State private var isVisible = false
     @State private var firstTime:Bool = true
     @State private var handleMusicPlaybackStateChange:Bool = false
-    @State private var MusicImageIsHover:Bool = false
     @State private var isDraggingButPause:Bool = false
     @State private var AfterDraggingButPause:Double = 0.0
     
     
     var body: some View {
-        VStack(spacing:0){
-            GeometryReader { geometry in
-                let size = min(geometry.size.width, geometry.size.height)
-                let imagesize = artwork?.size ?? CGSize(width: 1,height: 1)
-                let widthScale:CGFloat = imagesize.width / imagesize.height
-                let RoundedRectangleDelta: CGFloat = size*0.15/2
-                let width = size * widthScale
-                let height = size
-                let RoundedRectangleScaleX = (width + 2 * RoundedRectangleDelta) / width + 0.015
-                let RoundedRectangleScaleY = (height + 2 * RoundedRectangleDelta) / height + 0.015
-                ZStack{
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.gray.opacity(MusicImageIsHover ? 0.5 : 0))
-                        .frame(width:  width,height: height)
-                        .scaleEffect(
-                            x: MusicImageIsHover ? RoundedRectangleScaleX : 1.0,
-                            y: MusicImageIsHover ? RoundedRectangleScaleY : 1.0
-                        )
-                        .overlay(
-                            Group {
-                                if let image = artwork {
-                                    Image(nsImage: image).resizable()
-                                } else {
-                                    Image("MusicDefault").resizable()
-                                }
-                            }
-                                .scaledToFit()
-                                .cornerRadius(10)
-                                .onTapGesture {openMusic()}
-                                .scaleEffect(MusicImageIsHover ? 1.03 : 1.0)
-                                .onHover{ishovering in  
-                                    withAnimation(.easeInOut(duration: 0.2)){
-                                        MusicImageIsHover = ishovering 
-                                    }
-                                }
-                        )
-                }
-                .offset(x:(geometry.size.width-width)/2)
-                .frame(width:  width,height: height)
+        HStack(spacing: 0){
+            if IslandTypeManager.shared.checkNowIslandTypeIs(.Music){
+                MusicIconButton(artwork: artwork)
+                    .padding(.vertical,20)
+                    .padding(.horizontal,30)
             }
-            MarqueeText(text: TrackName, speed: 20, delay: 0.5,font: .system(size: 13))
+            MusicView
+        }
+    }
+    
+    
+    
+    private var MusicView: some View {
+        VStack(spacing:0){
+            if !IslandTypeManager.shared.checkNowIslandTypeIs(.Music){
+                MusicIconButton(artwork: artwork)
+            }
+            
+            let font1:CGFloat = IslandTypeManager.shared.checkNowIslandTypeIs(.Music) ? 20 : 13
+            let font2:CGFloat = IslandTypeManager.shared.checkNowIslandTypeIs(.Music) ? 15 : 10
+            
+            MarqueeText(text: TrackName, speed: 20, delay: 0.5,font: .system(size: font1))
                 .padding(.horizontal)
                 .padding(.top,5)
-            MarqueeText(text: ArtistAndAlbumName, speed: 20, delay: 0.5, TextColor: Color.gray,font: .system(size: 10))
+            MarqueeText(text: ArtistAndAlbumName, speed: 20, delay: 0.5, TextColor: Color.gray,font: .system(size: font2))
                 .padding(.horizontal)
                 .padding(.bottom,5)
             SliderBar(progress:$progress,isDragging: $handleMusicPlaybackStateChange)
@@ -89,29 +70,35 @@ struct MusicView: View {
                 }
                 .padding(.vertical,3)
             ZStack{
+                let size:CGFloat = IslandTypeManager.shared.checkNowIslandTypeIs(.Music) ? 30.0 : 20.0
+                let font:CGFloat = IslandTypeManager.shared.checkNowIslandTypeIs(.Music) ? 14.0 : 9.0
+                
                 VStack(){
                     HStack{
                         Text(SecondToMMSS(currentTime))
                             .foregroundColor(.white)
-                            .font(.system(size: 9))
+                            .font(.system(size: font))
                         Spacer()
                         Text(SecondToMMSS(totalTime))
                             .foregroundColor(.white)
-                            .font(.system(size: 9))
+                            .font(.system(size: font))
                     }
                 }.frame(alignment: .top)
                 .padding(.horizontal)
                 HStack(spacing:3){
-                    MenuItemButton(systemName: "backward.fill",onTap: {ControlMusic(0)},size:20,ResizeMagin:1.2).padding(.vertical,3)
+                    MenuItemButton(systemName: "backward.fill",onTap: {ControlMusic(0)},size:size,ResizeMagin:1.2).padding(.vertical,3)
                     
-                    MenuItemButton(systemName: isPlay ? "pause.fill" : "play.fill",onTap: {ControlMusic(1)},size:20,ResizeMagin:1.2).padding(.vertical,3)
+                    MenuItemButton(systemName: isPlay ? "pause.fill" : "play.fill",onTap: {ControlMusic(1)},size:size,ResizeMagin:1.2).padding(.vertical,3)
                     
-                    MenuItemButton(systemName: "forward.fill",onTap: {ControlMusic(2)},size:20,ResizeMagin:1.2).padding(.vertical,3)
-                }.frame(maxHeight: 20)
+                    MenuItemButton(systemName: "forward.fill",onTap: {ControlMusic(2)},size:size,ResizeMagin:1.2).padding(.vertical,3)
+                }.frame(maxHeight: size)
                 
             }
         }
-        .frame(maxWidth: 180,maxHeight: .infinity)
+        .frame(
+            maxWidth: IslandTypeManager.shared.checkNowIslandTypeIs(.Music) ? .infinity : 180,
+            maxHeight: .infinity
+        )
         .onAppear {
             isVisible = true
             isPlay = (isMusicPlaying()) ?? false
@@ -121,6 +108,8 @@ struct MusicView: View {
             isVisible = false
         }
     }
+    
+    
     
     func ControlMusic(_ function:Int){
         switch function {

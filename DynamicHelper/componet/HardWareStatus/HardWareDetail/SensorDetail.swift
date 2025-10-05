@@ -123,12 +123,12 @@ struct SensorDetail: View {
             )
             MetricTile(
                 title: "系統瞬時功率",
-                value: AvgSysPower.toString(),
+                value: MmtSysPower.toString(),
                 color: .white
             )
             MetricTile(
                 title: "系統平均功率",
-                value: MmtSysPower.toString(),
+                value: AvgSysPower.toString(),
                 color: .white
             )
         }
@@ -204,7 +204,7 @@ struct SensorDetail: View {
     }
     
     private func RefreshSensor(){
-        if !islandTypeManager.checkNowIslandTypeIs(.Hardware) || StatusModel.shared.nowType != .sensor{stopMonitoring(); return  }
+        if !IslandTypeManager.shared.checkNowIslandTypeIs(.Hardware) || StatusModel.shared.nowType != .sensor{stopMonitoring(); return  }
         
         Sensor = SensorsReader.shared.read()
         AirportTemp.Value = readSensor("Airport") as! Double

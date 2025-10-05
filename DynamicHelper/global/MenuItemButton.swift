@@ -29,28 +29,11 @@ struct MenuItemButton: View {
     let sizeR:CGFloat = defaultMenuItemButtonSizeR
     
     var body: some View {
-//        let pressGesture = DragGesture(minimumDistance: 0)
-//            .onChanged { _ in
-//                isPressed = true
-//                backgroundColor = 0.4
-//            }
-//            .onEnded { _ in
-//                // 放開時還原顏色或執行其他動作
-//                isPressed = false
-//                backgroundColor = 0.5
-//                onTap?()
-//            }
         let s = min(width ?? size, height ?? size)
         ZStack {
-//            RoundedRectangle(cornerRadius: radius)
-//                .fill(Color.gray.opacity(backgroundColor))
-//                .frame(maxWidth: .infinity, maxHeight: .infinity)
-//            
             Image(systemName: systemName)
                 .font(.system(size: s*sizeR))
                 .foregroundStyle(.white)
-//                .scaleEffect(isPressed ? 1.0 : defaultMenuItemButtonResizeMagin)
-//                .padding(.leading)
         }
         .frame(width: width ?? size, height: height ?? size)
         .hoverPressEffect(HS:ResizeMagin,CR:radius) {

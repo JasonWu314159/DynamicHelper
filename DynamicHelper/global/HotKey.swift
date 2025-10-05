@@ -14,8 +14,7 @@ class HotKeyManager {
     private var hotKeyRef: EventHotKeyRef?
     
     func registerHotKey(keyCode: UInt32, modifiers: UInt32, handler: @escaping () -> Void) {
-        var eventHotKeyID = EventHotKeyID(signature: OSType(bitPattern: Int32(truncatingIfNeeded: "HK01".fourCharCodeValue)),
-                                          id: 1)
+        let eventHotKeyID = EventHotKeyID(signature: OSType(bitPattern: Int32(truncatingIfNeeded: "HK01".fourCharCodeValue)),id: 1)
         
         // 將 handler 存起來，配合回調使用
         self.hotKeyHandler = handler

@@ -17,7 +17,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var powerMonitor: PowerMonitor?
     
     var islandView: IslandView!
-    let hoverState = HoverState()
     var remoteControlChooseWindowDelegate:RemoteControlChooseWindowDelegate!
     var isProgrammaticallyClosingRemoteControlWindow = false
     var keepAliveTimer: Timer?
@@ -29,8 +28,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         getSettings()
-        islandView = IslandView(hoverState: hoverState,appDelegate: self)
-//            .environmentObject(windowState) as! IslandView as IslandView
+        islandView = IslandView(
+            hoverState: HoverState.IslandHoverState,
+            appDelegate: self
+        )
         powerMonitor = PowerMonitor()
         screenMonitor = ScreenMonitor(self)
         SetShortCutKey()
@@ -64,7 +65,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         space.windows.insert(window)
         startKeepAliveTimer()
         preventAppNap()
-//        powerMonitor = PowerMonitor()
     }
     
     func update(type: IslandTypeManager.IslandType) {

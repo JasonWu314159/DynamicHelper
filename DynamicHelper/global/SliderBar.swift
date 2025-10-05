@@ -15,13 +15,11 @@ struct SliderBar: View {
     var barHeight: CGFloat = 8
     var width: CGFloat = .infinity
     @State var isHovering: Bool = false
-//    let maxBarHeight: CGFloat = 12
 
     var body: some View {
         GeometryReader { geo in
             let totalWidth = geo.size.width
             VStack(alignment: .center) {
-//                Spacer(minLength: 0)
                 ZStack(alignment: .leading) {
                     // 背景軌道
                     Rectangle()
@@ -84,7 +82,6 @@ struct SliderBar: View {
                             isHovering = hovering
                         }
                     }
-//                Spacer()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }

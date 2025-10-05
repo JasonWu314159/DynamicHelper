@@ -28,6 +28,7 @@ struct UsageTypeBoard: View {
     var usageType: [UsageType]      // 目前值 (0~1)
     var label: String      // 中間顯示的文字
     var lineWidth: CGFloat
+    var size: CGFloat = 110
     var backgroundColor: Color
     var onTap: (() -> Void)?
     
@@ -62,25 +63,57 @@ struct UsageTypeBoard: View {
     
 
     var body: some View {
-        ZStack {
-            ZStack{
-                ZStack {
-                    ForEach(usageType, id: \.id) { type in
-                        SectorShape(startAngle: .degrees(360)*type.accumulation, endAngle: .degrees(360)*(type.accumulation+type.value),width:lineWidth)
-                            .foregroundStyle(type.foregroundColor)
-                    }
-                    SectorShape(startAngle: .degrees(360)*EmptyStartValue, endAngle: .degrees(360),width:lineWidth)
-                        .foregroundStyle(backgroundColor)
-                }.rotationEffect(Angle.degrees(-90))
-                Text(label)
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
+        VStack{
+            Spacer()
+            ZStack {
+                ZStack{
+                    ZStack {
+                        ForEach(usageType, id: \.id) { type in
+                            SectorShape(startAngle: .degrees(360)*type.accumulation, endAngle: .degrees(360)*(type.accumulation+type.value),width:lineWidth)
+                                .foregroundStyle(type.foregroundColor)
+                        }
+                        SectorShape(startAngle: .degrees(360)*EmptyStartValue, endAngle: .degrees(360),width:lineWidth)
+                            .foregroundStyle(backgroundColor)
+                    }.rotationEffect(Angle.degrees(-90))
+                    Text(label)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                }
+                .scaleEffect(0.9)
             }
-            .scaleEffect(0.9)
-        }
-        .hoverPressEffect(HBG:0.2,PBG: 0.1,CR:15){
-            onTap?()
+            .frame(width: size, height: size)
+            .hoverPressEffect(HBG:0.2,PBG: 0.1,CR:15){
+                onTap?()
+            }
+            Spacer()
+            HStack(spacing:0){
+                let size:CGFloat = 7;
+                let space:CGFloat = 1;
+                let spacer:CGFloat = 2;
+                Spacer(minLength: spacer)
+                ForEach(usageType, id: \.id) { type in
+                    HStack(spacing:space){
+                        RoundedRectangle(cornerRadius: size/4)
+                            .foregroundStyle(type.foregroundColor)
+                            .frame(width: size, height: size)
+                        Text(type.name)
+                            .font(.system(size: size))
+                            .foregroundStyle(.white)
+                    }
+                    Spacer(minLength: spacer)
+                }
+                HStack(spacing:space){
+                    RoundedRectangle(cornerRadius: size/4)
+                        .foregroundStyle(backgroundColor)
+                        .frame(width: size, height: size)
+                    Text("閒置")
+                        .font(.system(size: size))
+                        .foregroundStyle(.white)
+                }
+                Spacer(minLength: spacer)
+            }
+            Spacer()
         }
     }
 }

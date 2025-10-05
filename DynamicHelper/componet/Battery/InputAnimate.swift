@@ -83,6 +83,5 @@ struct InputAnimation: View  {
         if let info = PowerMonitor.getBatteryInfo() {
             isPluggedIn = info.isPluggedIn
         }
-//        print(1)
     }
 }

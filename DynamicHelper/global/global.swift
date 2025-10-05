@@ -10,35 +10,22 @@ import SwiftUI
 import AppKit
 
 
-func getNowScreen() -> NSScreen {
-    let Screens = getAllScreenInfo()
-    var screen:NSScreen
-    if(defaultWindowPos == -1){
-        for i in Screens{
-            if i.isBuiltin{
-                return i.screen
-            }
-        }
-        screen = Screens[0].screen
-    }else if(defaultWindowPos < Screens.count){
-        screen = Screens[defaultWindowPos].screen
-    }else{
-        screen = Screens[Screens.count-1].screen
-    }
-    return screen
-}
 
 
 var MusicInfo:(TrackName:String,ArtistAndAlbumName:String,artwork: NSImage?,currentTime:Double,totalTime:Double,progress:Double, isPlay:Bool) = ("","",nil,0,0,0,false)
 
 class HoverState: ObservableObject {
+    static let IslandHoverState:HoverState = HoverState()
+    
     @Published var isHovering: Bool = false
     @Published var isDragger: Bool = false
 }
 
 
-
 class ViewSpace: ObservableObject {
+    static let AirDrop:ViewSpace = ViewSpace()
+    static let FileDrop:ViewSpace = ViewSpace()
+    
     @Published var frame:CGRect = CGRect.zero
     @Published var isHovering:Bool = false
     
@@ -51,20 +38,17 @@ class ViewSpace: ObservableObject {
     
 }
 
-var AirDropViewSpace:ViewSpace = ViewSpace()
-var FileDropViewSpace:ViewSpace = ViewSpace()
 
 
 func getMousePoint() -> CGPoint {
     var mousePosition = NSEvent.mouseLocation
-    let screen = getNowScreen()
+    let screen = ScreenMonitor.getNowScreen()
     mousePosition.y = screen.frame.height - mousePosition.y + screen.frame.origin.y
-    mousePosition.x = mousePosition.x - screen.frame.width/2 + islandTypeManager.getNowWindowSize().width/2 - screen.frame.origin.x
+    mousePosition.x = mousePosition.x - screen.frame.width/2 + IslandTypeManager.shared.getNowWindowSize().width/2 - screen.frame.origin.x
 //    print(mousePosition)
     return mousePosition
 }
 
-var isCharging:Bool = false
 
 
 let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!

@@ -132,10 +132,3 @@ struct MetricTile: View {
         .padding(.horizontal, 6)
     }
 }
-
-// 小語法糖：條件修飾符
-extension View {
-    @ViewBuilder func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
-        if condition { transform(self) } else { self }
-    }
-}

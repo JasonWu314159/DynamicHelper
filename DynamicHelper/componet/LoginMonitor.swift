@@ -37,8 +37,8 @@ struct LoginAnimation:View {
                     self.isUnlock = true
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    if islandTypeManager.getNowIslandType() == .onLogin{ 
-                        islandTypeManager.OutsideChangeIslandType(to: .hide)
+                    if IslandTypeManager.shared.getNowIslandType() == .onLogin{ 
+                        IslandTypeManager.shared.OutsideChangeIslandType(to: .hide)
                     }
                 }
             }
@@ -65,8 +65,8 @@ extension AppDelegate{
         dnc.addObserver(forName: Notification.Name("com.apple.screenIsUnlocked"),
                         object: nil,
                         queue: .main) { _ in
-            if islandTypeManager.getNowIslandType() == .hide{
-                islandTypeManager.OutsideChangeIslandType(to:.onLogin)
+            if IslandTypeManager.shared.getNowIslandType() == .hide{
+                IslandTypeManager.shared.OutsideChangeIslandType(to:.onLogin)
             }
         }
     }

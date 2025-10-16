@@ -61,6 +61,7 @@ struct TextFormat {
         
         
         if !Unit.canPrefix {
+            if Unit == .percent{ v*=100 }
             let l:Int = Int(log10(v))+1
             let formatted = String(format: "%.\(length-l)f", v)
             return "\(formatted)\(s)\(Unit.rawValue)"

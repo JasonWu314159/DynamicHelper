@@ -43,8 +43,10 @@ struct MenuView: View {
     }
     
     func FolderItemButtonAction(){
-        withAnimation(.easeInOut(duration: 0.2)){
-            island.OutsideChangeIslandType(to: island.getNowIslandType() == .exten ? .Drop : .exten)
-        }
+        island
+            .OutsideChangeIslandType(
+                to: island.getNowIslandType() == .exten ? .Drop : .exten,
+                Animate: true
+            )
     }
 }

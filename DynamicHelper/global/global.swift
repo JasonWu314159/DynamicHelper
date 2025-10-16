@@ -12,8 +12,6 @@ import AppKit
 
 
 
-var MusicInfo:(TrackName:String,ArtistAndAlbumName:String,artwork: NSImage?,currentTime:Double,totalTime:Double,progress:Double, isPlay:Bool) = ("","",nil,0,0,0,false)
-
 class HoverState: ObservableObject {
     static let IslandHoverState:HoverState = HoverState()
     

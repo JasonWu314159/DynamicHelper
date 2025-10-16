@@ -21,6 +21,8 @@ struct FundationSetting:View{
                     Text("上一次打開").tag(IslandTypeManager.IslandType.hide)
                     Text("預設").tag(IslandTypeManager.IslandType.exten)
                     Text("檔案").tag(IslandTypeManager.IslandType.Drop)
+                    Text("硬體狀態").tag(IslandTypeManager.IslandType.Hardware)
+                    Text("音樂播放器").tag(IslandTypeManager.IslandType.Music)
                 }.onAppear {
                     saveSettings()
                     homeViewType = IslandTypeManager.shared.defaultWindowType
@@ -35,13 +37,20 @@ struct FundationSetting:View{
                 Text("視窗位置")
                 Spacer()
                 Picker("", selection: $SelectWindowPos) {
-                    Text("內建顯示器").tag(-1)
+                    ForEach(getAllScreenInfo()){item in
+                        if item.isBuiltin{
+                            Text("內建顯示器 \(item.screen.localizedName)").tag(-1)  
+                        }                   
+                    }
                     ForEach(getAllScreenInfo()){item in
                         Text(item.name).tag(item.index)                            
                     }
                 }.onAppear {
                     saveSettings()
                     SelectWindowPos = defaultWindowPos
+                    if SelectWindowPos >=  getAllScreenInfo().count{
+                        SelectWindowPos = -1
+                    }
                 }
                 .onChange(of: SelectWindowPos) { _ ,newValue in
                     defaultWindowPos = newValue
@@ -57,6 +66,9 @@ struct FundationSetting:View{
                 LaunchAtLogin.Toggle("")
             }
             Spacer()
+#if DEBUG
+            Text("In Debug mode\nLaunch by Xcode")
+#endif
         }
         .navigationTitle("基本設定")
     }

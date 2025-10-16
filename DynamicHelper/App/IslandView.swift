@@ -11,10 +11,8 @@ import AppKit
 struct IslandView: View {
     @ObservedObject var island = IslandTypeManager.shared
     @State private var dummyState = false
-    @State private var isHovering = false
     @State private var isPlayingGame: Bool = false
     @State private var isPlayingMusic: Bool = false
-    @State private var mouseLocation = NSEvent.mouseLocation
     @ObservedObject var hoverState: HoverState
     var appDelegate: AppDelegate
     @State private var windowWidth: CGFloat = 0
@@ -54,6 +52,11 @@ struct IslandView: View {
                                 HStack{
                                     MusicView()
                                     VStack{
+#if DEBUG
+                                        Spacer()
+                                        Text("In Debug mode\nLaunch by Xcode")
+                                            .foregroundStyle(.white)
+#endif
                                         Spacer()
                                         CopyBookScroller()
                                     }
@@ -133,7 +136,7 @@ struct IslandView: View {
                 .onChange(of: island.outsideChange) {_,newValue in
                     DispatchQueue.main.async{
                         if(newValue != nil){
-                            refreshWindowSize()
+                            refreshWindowSize(isAnimated:island.ousideChangeWithAnimate)
                         }
                     }
                 }
@@ -176,17 +179,18 @@ struct IslandView: View {
         island.setIslandViewChangeState(isChanging: true)
         var type = island.outsideChange ?? .hide
         if type == .hide && isPlayingGame{type = .gameMode}
+        if type == .hide && isPlayingMusic{type = .onMusicPlaying}
         let hasnotch = IslandTypeManager.hasNotch
         let LastTypeSize = IslandTypeManager.shared.getNowWindowSize()
         let NewTypeSize = IslandTypeManager.getWindowSize(type)
         let NewTypeRadius = IslandTypeManager.getWindowRadius(type)
-        if(!hasnotch && island.checkNowIslandTypeIs(.hide)){windowWidth=1;windowHeight=1}
+        if(!hasnotch && island.checkNowIslandTypeIs(.hide)){windowWidth=190;windowHeight=1}
         let isToSmall = IslandTypeManager.isIslandTypeToSmall(from: island.getNowIslandType(), to: type)
         let isToBig = IslandTypeManager.isIslandTypeToBig(from: island.getNowIslandType(), to: type)
         let animateTime:CGFloat = isAnimated ? 0.5 : 0 
         
         withAnimation(.spring(response: animateTime, dampingFraction: isToBig ? 0.5 : 0.75)){
-            if(!hasnotch && type == .hide){windowWidth=NewTypeSize.width}
+            if(!hasnotch && type == .hide){windowWidth=10}
             else{windowWidth = NewTypeSize.width}
             windowHeight = NewTypeSize.height
             windowUpRadius = NewTypeRadius.up
@@ -219,31 +223,27 @@ struct IslandView: View {
     }
     
     func onHoverEvent(_ hovering:Bool? = nil){
-        let h = hovering ?? hoverState.isHovering
-        isHovering = h
-        mouseLocation = NSEvent.mouseLocation
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            if isHovering == h && mouseLocation != NSEvent.mouseLocation {
-                var type = island.getNowIslandType()
-                if(type != .Drop){
-                    type = h ? island.lastWindowType : .hide
-                }else if(!h){
-                    type = .hide
-                }
-                island.OutsideChangeIslandType(to: type)
-            }
+        let WindowRect = NSRect(
+            origin: NSPoint(x: -1,y: -1),
+            size: CGSize(width: windowWidth, height: windowHeight+1)
+        )        
+        let h = WindowRect.contains(getMousePoint())
+        var type = island.getNowIslandType()
+        if(type != .Drop){
+            type = h ? island.lastWindowType : .hide
+        }else if(!h){
+            type = .hide
         }
+        island.OutsideChangeIslandType(to: type)
     }
     
     func onDraggerEvent(_ hovering:Bool? = nil){
-        let h = hovering ?? hoverState.isDragger
-        isHovering = h
-        mouseLocation = NSEvent.mouseLocation
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            if isHovering == h && mouseLocation != NSEvent.mouseLocation {
-                island.OutsideChangeIslandType(to: h ? .Drop : .hide)
-            }
-        }
+        let WindowRect = NSRect(
+            origin: NSPoint(x: -1,y: -1),
+            size: CGSize(width: windowWidth, height: windowHeight)
+        )        
+        let h = WindowRect.contains(getMousePoint())
+        island.OutsideChangeIslandType(to: h ? .Drop : .hide)
     }
     
     func startIdleKeepAlive() {

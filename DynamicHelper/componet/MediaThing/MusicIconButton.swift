@@ -58,7 +58,11 @@ struct MusicIconButton: View {
                                         openMusic()
                                         return
                                     }else{
-                                        IslandTypeManager.shared.OutsideChangeIslandType(to: .Music)
+                                        IslandTypeManager.shared
+                                            .OutsideChangeIslandType(
+                                                to: .Music,
+                                                Animate: true
+                                            )
                                     }
                                 }
                                 .scaleEffect(MusicImageIsHover ? 1.03 : 1.0)

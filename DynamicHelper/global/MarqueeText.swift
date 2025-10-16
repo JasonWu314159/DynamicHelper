@@ -16,12 +16,14 @@ struct MarqueeText: View {
     var Space: CGFloat = 15
     var font: Font = .system(size: 10)
     var fontWeight: Font.Weight = .regular
+    var shouldMask: Bool = false
+    var MaskColor: Color = .black
     
+    @State private var isMarquee: Bool = true
     @State private var offsetX: CGFloat = 0
     @State private var textWidth: CGFloat = 0
     @State private var textHeight: CGFloat = 0
     @State private var containerWidth: CGFloat = 0
-    @State private var timer: Timer?
     
     @State private var startTime: Date?
     
@@ -55,10 +57,31 @@ struct MarqueeText: View {
                     containerWidth = containerW
                     startTime = Date()
                 }
+                .onChange(of: textWidth) { _,newWidth in
+                    isMarquee = (newWidth > containerW) // 告知變化
+                }
+                .overlay{
+                    if isMarquee && shouldMask{
+                        Rectangle()
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(stops: [
+                                        .init(color: MaskColor, location: 0.0),   // 左側黑
+                                        .init(color: .clear, location: 0.15),  // 漸淡開始
+                                        .init(color: .clear, location: 0.85),  // 漸淡結束
+                                        .init(color: MaskColor, location: 1.0)    // 右側黑
+                                    ]),
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                    }
+                }
             }
         }
         .clipped()
         .frame(height: textHeight)
+        .allowsHitTesting(false)
     }
     
 }

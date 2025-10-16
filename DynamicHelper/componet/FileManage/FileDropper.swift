@@ -122,7 +122,6 @@ struct FileInfoView: View  {
                 ZStack{
                     MarqueeText(text: file.RealUrl.lastPathComponent, speed: 20, delay: 0.5,font: .system(size: 13))
                         .padding(.vertical,0)
-                        .allowsHitTesting(false)
                     Color.clear
                         .contentShape(Rectangle()) 
                         .frame(maxHeight: 14)

@@ -15,6 +15,8 @@ struct MusicPlaying:View{
     @State private var NoPlayingTime:Int = 0
     @State private var TrackName: String = MusicInfo.TrackName
     @State private var progress:CGFloat = MusicInfo.progress
+    
+    @State private var isMarquee:Bool = false
     private let TextSize:CGFloat = 13
     
     var body: some View {
@@ -38,12 +40,20 @@ struct MusicPlaying:View{
                     isVisible = false
                 }
                 .padding(5)
-                Spacer()
+                if !IslandTypeManager.hasNotch{
+                    MarqueeText(text: TrackName,speed: 20,font: .system(size:TextSize),shouldMask: true)
+                    .padding(.vertical,1)
+                    .padding(.horizontal,1)
+                    
+                    
+                }else{
+                    Spacer()
+                }
                 AudioSpectrumView(isPlaying: $isPlay)
                     .frame(width: 25, height: 25)
                     .padding(.bottom,10)
             }
-            .frame(height: ScreenMonitor.getNowScreen().safeAreaInsets.top+1)
+            .frame(height: IslandTypeManager.NotchHeight+1)
             if IslandTypeManager.shared.getNowIslandType() == .onMusicChanging{
                 MarqueeText(text: TrackName,speed: 20,font: .system(size:TextSize))
                     .padding(.horizontal,5)
@@ -60,30 +70,14 @@ struct MusicPlaying:View{
         }.frame(maxWidth: .infinity,maxHeight: .infinity)
     }
     
+    
+    
+    
+    
+    
     func updateMusicInfo() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             if !isVisible {return}
-            let (a,b,c) = getMusicInfoViaShell()
-            
-            let totalTime = getCurrentTrackDuration()
-            let currentTime = getMusicPlaybackPosition()
-            if isMusicPlaying() ?? false { progress = totalTime == 0 ? 0 : currentTime / totalTime }
-            
-            if a != TrackName && a != "-"{
-                TrackName = a
-                MusicInfo.TrackName = a
-                var center = " - "
-                if(b == "" || c == ""){
-                    center = ""
-                }
-                MusicInfo.ArtistAndAlbumName = "\(b)\(center)\(c)"
-                IslandTypeManager.shared.OutsideChangeIslandType(to: .onMusicChanging)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 7.0){
-                    if IslandTypeManager.shared.getNowIslandType() == .onMusicChanging{
-                        IslandTypeManager.shared.OutsideChangeIslandType(to: .onMusicPlaying)
-                    }
-                }
-            }
             
             DispatchQueue.global().async {
                 let playing = isMusicPlaying()  // AppleScript
@@ -93,10 +87,39 @@ struct MusicPlaying:View{
             }
             if !isPlay{
                 NoPlayingTime += 1;
-                if NoPlayingTime > 4 { IslandTypeManager.shared.OutsideChangeIslandType(to: .hide) ;return }
+                if NoPlayingTime > 4 { IslandTypeManager.shared.OutsideChangeIslandType(to: .hide) ; isVisible = false ;return }
             }else{
                 NoPlayingTime = 0
             }
+            
+            guard let (a,b,c) = getMusicInfoViaShell(),
+                  let totalTime = getCurrentTrackDuration(),
+                  let currentTime = getMusicPlaybackPosition()
+            else{
+                updateMusicInfo()
+                return
+            }
+            if isMusicPlaying() ?? false { progress = totalTime == 0 ? 0 : currentTime / totalTime }
+            
+            if a != TrackName{
+                TrackName = a
+                MusicInfo.TrackName = a
+                var center = " - "
+                if(b == "" || c == ""){
+                    center = ""
+                }
+                MusicInfo.ArtistAndAlbumName = "\(b)\(center)\(c)"
+                if IslandTypeManager.hasNotch{
+                    IslandTypeManager.shared.OutsideChangeIslandType(to: .onMusicChanging)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 7.0){
+                        if IslandTypeManager.shared.getNowIslandType() == .onMusicChanging{
+                            IslandTypeManager.shared.OutsideChangeIslandType(to: .onMusicPlaying)
+                        }
+                    }
+                }
+            }
+            
+            
             if let img = loadMusicArtworkImage() {
                 artwork = img
                 MusicInfo.artwork = img

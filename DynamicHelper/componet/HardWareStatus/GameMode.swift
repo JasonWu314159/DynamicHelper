@@ -77,6 +77,7 @@ struct UsageTextView: View {
     var value: TextFormat
     var size: CGFloat
     var color: Color = .white
+    @State var maxWidth: CGFloat = 0
     
     init(title: String, value: Double, size: CGFloat, Unit: TextFormat.unit = .percent){
         self.title = title
@@ -107,15 +108,23 @@ struct UsageTextView: View {
             .foregroundStyle(color)
             .font(.system(size: size / 3.5).monospaced())
             .fontWeight(.bold)
-            .frame(width: getWidthSize(), height: size, alignment: .center)
+            .frame(width: maxWidth, height: size, alignment: .center)
             .multilineTextAlignment(.center)
+            .onChange(of: title){
+                getWidthSize()
+            }
+            .onChange(of: value.toString()){
+                getWidthSize()
+            }
 //            .background(color)
     }
     
     
-    func getWidthSize() -> CGFloat{
+    func getWidthSize(){
         let len = max(title.count,value.toString().count)
-        return (size / 3.5) * CGFloat(len - 1)
+        if (size / 3.5) * CGFloat(len - 1) > maxWidth{
+            maxWidth = (size / 3.5) * CGFloat(len - 1)
+        }
     }
     
 }

@@ -8,7 +8,51 @@
 import Foundation
 import SwiftUI
 
-func getMusicInfoViaShell() -> (trackName:String, artistName:String, albumName:String) {
+
+var MusicInfo:(TrackName:String,ArtistAndAlbumName:String,artwork: NSImage?,currentTime:Double,totalTime:Double,progress:Double, isPlay:Bool) = ("","",nil,0,0,0,false)
+
+struct MediaInfo{
+    var TrackName: String = ""
+    var Artist: String = ""
+    var Album: String = ""
+    var currentTime: Double = 0
+    var totalTime: Double = 0 
+    var progress: Double = 0
+    var bundleID: String = ""
+    var artwork: NSImage? = nil
+    var isPlaying: Bool = true
+    
+    init(
+        TrackName: String = "",
+        Artist: String = "",
+        Album: String = "",
+        currentTime: Double = 0,
+        totalTime: Double = 0,
+        progress: Double = 0,
+        bundleID: String = "",
+        artwork: NSImage? = nil,
+        isPlaying: Bool = false
+    ) {
+        self.TrackName = TrackName
+        self.Artist = Artist
+        self.Album = Album
+        self.currentTime = currentTime
+        self.totalTime = totalTime
+        self.progress = progress
+        self.bundleID = bundleID
+        self.artwork = artwork
+        self.isPlaying = isPlaying
+    }
+    
+}
+
+
+
+
+
+
+
+func getMusicInfoViaShell() -> (trackName:String, artistName:String, albumName:String)? {
     let script = """
     tell application "Music"
         if it is running and player state is playing then
@@ -27,10 +71,10 @@ func getMusicInfoViaShell() -> (trackName:String, artistName:String, albumName:S
         let result = appleScript.executeAndReturnError(&error)
         if let error = error {
             print("getMusicInfoViaShell() ❌ AppleScript Error: \(error)")
-            return ("Error","Error","Error")
+            return nil
         }
         guard let string = result.stringValue else {
-            return ("-","-","-")
+            return nil
         }
         let parts = string.split(separator: "==", omittingEmptySubsequences: false).map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
         
@@ -38,10 +82,10 @@ func getMusicInfoViaShell() -> (trackName:String, artistName:String, albumName:S
             return (parts[0], parts[1], parts[2])
         }
     }
-    return ("-","-","-")
+    return nil
 }
 
-func getMusicPlaybackPosition() -> Double {
+func getMusicPlaybackPosition() -> Double? {
     let script = """
     tell application "Music"
         if it is running and player state is playing then
@@ -57,15 +101,16 @@ func getMusicPlaybackPosition() -> Double {
         let result = appleScript.executeAndReturnError(&error)
         if let error = error {
             print("getMusicPlaybackPosition() AppleScript Error: \(error)")
-            return -1
+            return nil
         }
-
-        
+        if result.doubleValue == -1 {
+            return nil
+        }
         if let seconds = result.coerce(toDescriptorType: typeIEEE64BitFloatingPoint)?.doubleValue, seconds >= 0 {
             return seconds
         }
     }
-    return -1
+    return nil
 }
 
 func saveMusicArtworkToTemp() {
@@ -105,7 +150,7 @@ func loadMusicArtworkImage() -> NSImage? {
 }
 
 
-func getCurrentTrackDuration() -> Double {
+func getCurrentTrackDuration() -> Double? {
     let script = """
     tell application "Music"
         if it is running and player state is playing then
@@ -121,11 +166,14 @@ func getCurrentTrackDuration() -> Double {
         let result = appleScript.executeAndReturnError(&error)
         if let error = error {
             print("getCurrentTrackDuration() ❌ AppleScript Error: \(error)")
-            return -1
+            return nil
+        }
+        if result.doubleValue == -1 {
+            return nil
         }
         return result.doubleValue
     }
-    return -1
+    return nil
 }
 
 

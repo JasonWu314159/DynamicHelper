@@ -18,9 +18,9 @@ struct ScreenInfo:Identifiable, Hashable {
     let isBuiltin: Bool
     var name: String {
         if index == 0{
-            return "主要顯示器"
+            return "主要顯示器 \(screen.localizedName)"
         }
-        return "延伸顯示器 \(index)"
+        return "延伸顯示器 \(index) (\(screen.localizedName))"
     }
 }
 

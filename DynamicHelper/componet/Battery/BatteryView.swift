@@ -48,7 +48,8 @@ struct BatteryView: View {
                 if IslandTypeManager.shared.checkNowIslandTypeIs(.Hardware){
                     StatusModel.shared.setNowType(.home)
                 }else{
-                    IslandTypeManager.shared.OutsideChangeIslandType(to: .Hardware)
+                    IslandTypeManager.shared
+                        .OutsideChangeIslandType(to: .Hardware, Animate: true)
                 }
             }
         }

@@ -10,9 +10,11 @@ import Cocoa
 
 class ScreenMonitor {
     var appDelegate: AppDelegate
+    static var nowScreen:NSScreen = NSScreen()
     
     init(_ app: AppDelegate) {
         appDelegate = app
+        ScreenMonitor.nowScreen = ScreenMonitor.getNowScreen()
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleScreenChange),
@@ -28,6 +30,8 @@ class ScreenMonitor {
     
     @objc private func handleScreenChange(notification: Notification) {
         print("🖥️ 螢幕設定變更")
+        print(NSScreen.screens)
+        ScreenMonitor.nowScreen = ScreenMonitor.getNowScreen()
         for (index, screen) in NSScreen.screens.enumerated() {
             print("螢幕 \(index): frame = \(screen.frame)")
         }
@@ -48,7 +52,7 @@ class ScreenMonitor {
     }
     
     func refreshWindowSize(window: NSWindow,size: CGSize = IslandTypeManager.shared.getNowWindowSize()){
-        let screen = getNowScreen()
+        let screen = ScreenMonitor.getNowScreen()
         let frame = NSRect(
             origin: NSPoint(
                 x: screen.frame.origin.x + screen.frame.size.width / 2 - size.width / 2,

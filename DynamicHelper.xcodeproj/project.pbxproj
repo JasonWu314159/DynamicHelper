@@ -9,10 +9,29 @@
 /* Begin PBXBuildFile section */
 		9608965F2E3C695800263E9E /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 9608965E2E3C695800263E9E /* LaunchAtLogin */; };
 		962613872E83057800A7A343 /* Inspect in Frameworks */ = {isa = PBXBuildFile; productRef = 962613862E83057800A7A343 /* Inspect */; };
+		9661989F2E96690E001351AD /* mediaremote-adapter.pl in Resources */ = {isa = PBXBuildFile; fileRef = 9661989C2E96690E001351AD /* mediaremote-adapter.pl */; };
+		966198A22E9669E1001351AD /* MediaRemoteAdapter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 966198A12E9669E1001351AD /* MediaRemoteAdapter.framework */; };
+		966198A32E9669E1001351AD /* MediaRemoteAdapter.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 966198A12E9669E1001351AD /* MediaRemoteAdapter.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		966C14212DF5A19100FD1497 /* libIOReport.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 966C14202DF5A19100FD1497 /* libIOReport.tbd */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		966198A42E9669E1001351AD /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				966198A32E9669E1001351AD /* MediaRemoteAdapter.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		9661989C2E96690E001351AD /* mediaremote-adapter.pl */ = {isa = PBXFileReference; lastKnownFileType = text.script.perl; path = "mediaremote-adapter.pl"; sourceTree = "<group>"; };
+		966198A12E9669E1001351AD /* MediaRemoteAdapter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaRemoteAdapter.framework; path = "mediaremote-adapter/MediaRemoteAdapter.framework"; sourceTree = "<group>"; };
 		966C13A52DF5A15C00FD1497 /* DynamicHelper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DynamicHelper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		966C14202DF5A19100FD1497 /* libIOReport.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libIOReport.tbd; path = usr/lib/libIOReport.tbd; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
@@ -31,6 +50,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				962613872E83057800A7A343 /* Inspect in Frameworks */,
+				966198A22E9669E1001351AD /* MediaRemoteAdapter.framework in Frameworks */,
 				9608965F2E3C695800263E9E /* LaunchAtLogin in Frameworks */,
 				966C14212DF5A19100FD1497 /* libIOReport.tbd in Frameworks */,
 			);
@@ -39,9 +59,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		9661989E2E96690E001351AD /* mediaremote-adapter */ = {
+			isa = PBXGroup;
+			children = (
+				9661989C2E96690E001351AD /* mediaremote-adapter.pl */,
+			);
+			path = "mediaremote-adapter";
+			sourceTree = "<group>";
+		};
 		966C139C2DF5A15C00FD1497 = {
 			isa = PBXGroup;
 			children = (
+				9661989E2E96690E001351AD /* mediaremote-adapter */,
 				966C13A72DF5A15C00FD1497 /* DynamicHelper */,
 				966C141F2DF5A19100FD1497 /* Frameworks */,
 				966C13A62DF5A15C00FD1497 /* Products */,
@@ -59,6 +88,7 @@
 		966C141F2DF5A19100FD1497 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				966198A12E9669E1001351AD /* MediaRemoteAdapter.framework */,
 				966C14202DF5A19100FD1497 /* libIOReport.tbd */,
 			);
 			name = Frameworks;
@@ -74,6 +104,7 @@
 				966C13A12DF5A15C00FD1497 /* Sources */,
 				966C13A22DF5A15C00FD1497 /* Frameworks */,
 				966C13A32DF5A15C00FD1497 /* Resources */,
+				966198A42E9669E1001351AD /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -134,6 +165,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9661989F2E96690E001351AD /* mediaremote-adapter.pl in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -290,6 +322,10 @@
 				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
 				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/mediaremote-adapter",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -335,6 +371,10 @@
 				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
 				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
 				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/mediaremote-adapter",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_LSUIElement = YES;

@@ -38,6 +38,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         LoginObserver(notification)
         let _ = CPULoadReader.shared.read()
         
+        
         let hostView = NSHostingView(rootView: islandView)
         let contentSize = hostView.fittingSize // 取得實際尺寸
         

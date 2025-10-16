@@ -172,6 +172,8 @@ struct CopyBook_Previews:View {
     @State private var offsetX:CGFloat = 0
     @State private var width:CGFloat = StringStorage.shared.objectWidth
     @State private var isAppear:Bool = false
+    
+    @State private var BackgroundColor:Color = .black
 
     
     init(previews: (String,Bool), id: Int) {
@@ -184,11 +186,8 @@ struct CopyBook_Previews:View {
             VStack{
                 MarqueeText(text: previews, speed: 20, delay: 0.5,font: .system(size: 15))
                     .padding(.vertical,0)
-                    .allowsHitTesting(false)
                 HStack(spacing:0){
                     MenuItemButton(systemName: "clipboard.fill",onTap: {CopyAndPaste(0)},width: objectWidth/2, height: 20)
-                        
-                    
                     MenuItemButton(systemName: "doc.on.doc",onTap: {CopyAndPaste(1)},width: objectWidth/2, height: 20)
                 }
             }
@@ -226,10 +225,11 @@ struct CopyBook_Previews:View {
         .offset(x: offsetX)
         .frame(width:width)
         .padding(.horizontal,width/8)
-        .background(isHovered ? Color.gray.opacity(0.3) : .black)
+        .background(BackgroundColor)
         .clipped()
         .onHover{ h in
             isHovered = h
+            BackgroundColor = isHovered ? Color.gray.opacity(0.3) : .black
             StringStorage.shared.lastScrollPosID = id
         }
         .onTapGesture {

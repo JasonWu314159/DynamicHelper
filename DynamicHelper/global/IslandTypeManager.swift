@@ -78,11 +78,11 @@ class IslandTypeManager: ObservableObject {
     static var NotchHeight:CGFloat {
         let screen = ScreenMonitor.getNowScreen()
         let safeAreaInsets = screen.safeAreaInsets
-        return safeAreaInsets.top
+        return hasNotch ? safeAreaInsets.top : 32
     }
     
     static var Resize:CGFloat {
-        return hasNotch ? NotchHeight/32 : 1
+        return NotchHeight/32
     }
 
     static var hasNotch:Bool{

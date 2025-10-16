@@ -26,6 +26,7 @@ struct MusicView: View {
     @State private var AfterDraggingButPause:Double = 0.0
     
     
+    
     var body: some View {
         HStack(spacing: 0){
             if IslandTypeManager.shared.checkNowIslandTypeIs(.Music){
@@ -48,10 +49,10 @@ struct MusicView: View {
             let font1:CGFloat = IslandTypeManager.shared.checkNowIslandTypeIs(.Music) ? 20 : 13
             let font2:CGFloat = IslandTypeManager.shared.checkNowIslandTypeIs(.Music) ? 15 : 10
             
-            MarqueeText(text: TrackName, speed: 20, delay: 0.5,font: .system(size: font1))
+            MarqueeText(text: TrackName, speed: 20, delay: 0.5,font: .system(size: font1),shouldMask: true)
                 .padding(.horizontal)
                 .padding(.top,5)
-            MarqueeText(text: ArtistAndAlbumName, speed: 20, delay: 0.5, TextColor: Color.gray,font: .system(size: font2))
+            MarqueeText(text: ArtistAndAlbumName, speed: 20, delay: 0.5, TextColor: Color.gray,font: .system(size: font2),shouldMask: true)
                 .padding(.horizontal)
                 .padding(.bottom,5)
             SliderBar(progress:$progress,isDragging: $handleMusicPlaybackStateChange)
@@ -139,7 +140,7 @@ struct MusicView: View {
     
     func updateMusicInfo() {
         if !isVisible {return}
-        var delay = 0.5
+        var delay = 0.1
         if firstTime {
             delay = 0
             firstTime = false
@@ -147,11 +148,15 @@ struct MusicView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
             MusicInfo = (TrackName,ArtistAndAlbumName,artwork ?? nil,currentTime,totalTime,progress,isPlay)
             if(handleMusicPlaybackStateChange){return}
-            let (a,b,c) = getMusicInfoViaShell()
-            if a == "-" && !isPlay{updateMusicInfo();return}
             isPlay = isMusicPlaying() ?? false
-            totalTime = getCurrentTrackDuration()
-            currentTime = getMusicPlaybackPosition()
+            guard let (a,b,c) = getMusicInfoViaShell() ,
+            let TotalTime = getCurrentTrackDuration(),
+            let CurrentTime = getMusicPlaybackPosition()
+            else {
+                updateMusicInfo();return
+            }
+            totalTime = TotalTime
+            currentTime = CurrentTime
             progress = totalTime==0 ? 0 : currentTime / totalTime
             if a == TrackName {updateMusicInfo();return}
             TrackName = a

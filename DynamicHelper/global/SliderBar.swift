@@ -8,13 +8,20 @@
 import SwiftUI
 
 struct SliderBar: View {
-    @Binding public var progress: Double // 初始進度 (0 ~ 1)
-    @Binding public var isDragging: Bool
+    let progress: Double // 初始進度 (0 ~ 1)
+    var ReturnOnEnd: Bool = true 
+    let action: (Double,Bool) -> Void 
+    
+    
+    @State private var DraggingProgress: Double = 0
+    @State private var isDragging: Bool = false
     @State private var dragOffset: CGFloat? = nil
     
     var barHeight: CGFloat = 8
     var width: CGFloat = .infinity
-    @State var isHovering: Bool = false
+    @State private var isHovering: Bool = false
+    
+    
 
     var body: some View {
         GeometryReader { geo in
@@ -30,7 +37,7 @@ struct SliderBar: View {
                     Rectangle()
                         .fill(Color.white)
                         .frame(
-                            width: max(progress * totalWidth,0),
+                            width: max((isDragging ? DraggingProgress : progress) * totalWidth,0),
                             height: barHeight
                         )
                     
@@ -44,16 +51,19 @@ struct SliderBar: View {
                             DragGesture(minimumDistance: 0)
                                 .onChanged { value in
                                     let locationX = value.location.x
+                                    if !isDragging {
+                                        DraggingProgress = progress
+                                    }
                                     isDragging = true
-                                    
                                     // 第一次進入拖曳
                                     if dragOffset == nil {
-                                        let endX = totalWidth * progress
+                                        let endX = totalWidth * DraggingProgress
                                         dragOffset = locationX - endX
                                         
                                         // 是點一下（沒有移動）
                                         if abs(value.translation.width) < 1 {
-                                            progress = min(max(locationX / totalWidth, 0), 1)
+                                            DraggingProgress = min(max(locationX / totalWidth, 0), 1)
+                                            if !ReturnOnEnd {action(DraggingProgress,false)}
                                             dragOffset = nil
                                             return
                                         }
@@ -62,12 +72,14 @@ struct SliderBar: View {
                                     // 正在拖曳時，維持原有偏移
                                     if let offset = dragOffset {
                                         let newEndX = locationX - offset
-                                        progress = min(max(newEndX / totalWidth, 0), 1)
+                                        DraggingProgress = min(max(newEndX / totalWidth, 0), 1)
+                                        if !ReturnOnEnd {action(DraggingProgress,false)}
                                     }
                                 }
                                 .onEnded { _ in
                                     dragOffset = nil
                                     isDragging = false
+                                    action(DraggingProgress, true)
                                 }
                         )
                     

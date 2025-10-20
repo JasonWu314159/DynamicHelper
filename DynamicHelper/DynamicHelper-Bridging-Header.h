@@ -5,3 +5,5 @@
 
 //#import <MediaRemote/MediaRemote.h>
 #include "StateMonitor/header/bridge.h"
+#include "Objc/AppleScriptSafeExecutor.h"
+

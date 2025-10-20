@@ -9,7 +9,10 @@ import IOKit.ps
 import SwiftUI
 import AppKit
 
-final class PowerMonitor {
+final class PowerMonitor: ObservableObject {
+    static let shared = PowerMonitor()
+    
+    
     struct BatteryInfo {
         let isPluggedIn: Bool       // 是否插著電
         let isCharging: Bool        // 是否正在充電（即實際充電行為）
@@ -19,8 +22,16 @@ final class PowerMonitor {
     private var runLoopSource: CFRunLoopSource?
     private var lastPluggedInState: Bool = false
     private var ChargingStateChangeTime = Date()
+    @Published var batteryInfo: BatteryInfo
     
     init() {
+        self.batteryInfo = PowerMonitor
+            .getBatteryInfo() ?? BatteryInfo(
+                isPluggedIn: false,
+                isCharging: false,
+                percentage: 0
+            )
+        
         let loop = CFRunLoopGetCurrent()
         let context = Unmanaged.passUnretained(self).toOpaque()
         
@@ -52,6 +63,8 @@ final class PowerMonitor {
             monitorChargeEvent()
         }
         lastPluggedInState = info.isPluggedIn
+        batteryInfo = info
+        
     }
     
     func monitorChargeEvent() {

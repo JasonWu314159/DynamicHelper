@@ -59,17 +59,18 @@ struct SoundController: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity,alignment: .leading)
                 if(BigType){
                     HStack{
-                        SliderBar(progress: $volume, isDragging: $isDragged)
-                            .onChange(of: volume) { oldValue,newValue in
-                                if(!VolumeListenerManager.VolumeManager.isMuted || newValue != 0) {VolumeFunc.setSystemVolume(Float(newValue))}
-                                VolumeFunc.setSystemMute(newValue == 0)
-                            }.onChange(of: VolumeListenerManager.VolumeManager.isMuted) { oldValue,newValue in
-                                volume = VolumeListenerManager.VolumeManager.isMuted ? 0.0 : Double(VolumeListenerManager.VolumeManager.volume)
-                            }.onChange(of: VolumeListenerManager.VolumeManager.volume) { oldValue,newValue in
-                                if(!isDragged){
-                                    volume = Double(VolumeListenerManager.VolumeManager.volume)
-                                }
+                        SliderBar(progress: volume,ReturnOnEnd: false){newValue,isDragging in
+                            if(!VolumeListenerManager.VolumeManager.isMuted || newValue != 0) {VolumeFunc.setSystemVolume(Float(newValue))}
+                            VolumeFunc.setSystemMute(newValue == 0)
+                            isDragged = isDragging
+                            volume = newValue
+                        }.onChange(of: VolumeListenerManager.VolumeManager.isMuted) { oldValue,newValue in
+                            volume = VolumeListenerManager.VolumeManager.isMuted ? 0.0 : Double(VolumeListenerManager.VolumeManager.volume)
+                        }.onChange(of: VolumeListenerManager.VolumeManager.volume) { oldValue,newValue in
+                            if(!isDragged){
+                                volume = Double(VolumeListenerManager.VolumeManager.volume)
                             }
+                        }
                     }
                     .padding(.leading,size*sizeR)
                 }

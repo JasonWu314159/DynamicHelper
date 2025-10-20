@@ -9,8 +9,8 @@ import SwiftUI
 
 
 struct CustomBatteryView: View {
-    @Binding var level: CGFloat // 0.0 ~ 1.0
-    @Binding var isCharge: Bool
+    var level: CGFloat // 0.0 ~ 1.0
+    var isCharge: Bool
 
     var body: some View {
         ZStack(alignment: .leading) {

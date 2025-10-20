@@ -14,7 +14,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var RemoteControlChooseWindow: NSWindow?
     var space = CGSSpace(level: Int(INT_MAX))
     var settingsWindowDelegate: SettingsWindowDelegate!
-    var powerMonitor: PowerMonitor?
     
     var islandView: IslandView!
     var remoteControlChooseWindowDelegate:RemoteControlChooseWindowDelegate!
@@ -32,7 +31,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             hoverState: HoverState.IslandHoverState,
             appDelegate: self
         )
-        powerMonitor = PowerMonitor()
         screenMonitor = ScreenMonitor(self)
         SetShortCutKey()
         LoginObserver(notification)

@@ -34,12 +34,18 @@ public enum Platform: String, Codable {
     case m4Max
     case m4Ultra
     
+    case m5
+    case m5Pro
+    case m5Max
+    case m5Ultra
+    
     public static var apple: [Platform] {
         return [
             .m1, .m1Pro, .m1Max, .m1Ultra,
             .m2, .m2Pro, .m2Max, .m2Ultra,
             .m3, .m3Pro, .m3Max, .m3Ultra,
-            .m4, .m4Pro, .m4Max, .m4Ultra
+            .m4, .m4Pro, .m4Max, .m4Ultra,
+            .m5, .m5Pro, .m5Max, .m5Ultra
         ]
     }
     
@@ -54,6 +60,9 @@ public enum Platform: String, Codable {
     }
     public static var m4Gen: [Platform] {
         return [.m4, .m4Pro, .m4Max, .m4Ultra]
+    }
+    public static var m5Gen: [Platform] {
+        return [.m5, .m5Pro, .m5Max, .m5Ultra]
     }
     
     public static var all: [Platform] {
@@ -709,6 +718,16 @@ public class SystemKit {
                 } else {
                     return .m4
                 }
+            } else if name.contains("m5") {
+                if name.contains("pro") {
+                    return .m5Pro
+                } else if name.contains("max") {
+                    return .m5Max
+                } else if name.contains("ultra") {
+                    return .m5Ultra
+                } else {
+                    return .m5
+                }
             }
         }
         return nil
@@ -878,9 +897,6 @@ let deviceDict: [String: model_s] = [
 ]
 
 let osDict: [String: String] = [
-    "10.13": "High Sierra",
-    "10.14": "Mojave",
-    "10.15": "Catalina",
     "11": "Big Sur",
     "12": "Monterey",
     "13": "Ventura",

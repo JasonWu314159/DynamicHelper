@@ -8,7 +8,6 @@
 import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
-import Inspect
 
 struct DroppableIslandView: View {
     @ObservedObject var storedFiles:FileStorage = fileStorage
@@ -62,7 +61,7 @@ struct FileContainerView: View {
     @ObservedObject var storedFiles:FileStorage
     var body: some View {
         ScrollViewReader { proxy in
-            ScrollView(.horizontal) {
+            ScrollView(.horizontal,showsIndicators: false ) {
                 HStack(spacing: 10) {
                     ForEach($storedFiles.Files) {$file in
                         FileInfoView(file: $file, storedFiles: storedFiles).id($file.id)
@@ -79,10 +78,6 @@ struct FileContainerView: View {
                 }
                 .padding()
                 
-            }
-            .inspect { (nsScrollView: NSScrollView) in
-                nsScrollView.hasHorizontalScroller = false
-                nsScrollView.hasVerticalScroller = false
             }
         }
     }

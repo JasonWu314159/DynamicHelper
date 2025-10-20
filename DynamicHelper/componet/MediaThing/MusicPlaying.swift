@@ -9,7 +9,7 @@ import SwiftUI
 
 struct MusicPlaying:View{
     @State var artwork: NSImage? = MusicInfo.artwork
-    @State private var isPlay:Bool = MusicInfo.isPlay
+    @State private var isPlay:Bool = MusicInfo.isPlaying
     @State private var isVisible = false
     @State private var firstTime:Bool = true
     @State private var NoPlayingTime:Int = 0
@@ -104,11 +104,8 @@ struct MusicPlaying:View{
             if a != TrackName{
                 TrackName = a
                 MusicInfo.TrackName = a
-                var center = " - "
-                if(b == "" || c == ""){
-                    center = ""
-                }
-                MusicInfo.ArtistAndAlbumName = "\(b)\(center)\(c)"
+                MusicInfo.Artist = b
+                MusicInfo.Album = c
                 if IslandTypeManager.hasNotch{
                     IslandTypeManager.shared.OutsideChangeIslandType(to: .onMusicChanging)
                     DispatchQueue.main.asyncAfter(deadline: .now() + 7.0){
@@ -117,13 +114,14 @@ struct MusicPlaying:View{
                         }
                     }
                 }
+                
+                if let img = loadMusicArtworkImage() {
+                    artwork = img
+                    MusicInfo.artwork = img
+                }
             }
             
             
-            if let img = loadMusicArtworkImage() {
-                artwork = img
-                MusicInfo.artwork = img
-            }
             updateMusicInfo()
         }
     }

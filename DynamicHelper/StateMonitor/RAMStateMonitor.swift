@@ -165,14 +165,14 @@ public class RAMProcessReader{
     }
     
     
-    public func read() -> [TopProcess] {
-        if self.numberOfProcesses == 0 {
+    public func read(_ numberOfProcesses: Int? = nil) -> [TopProcess] {
+        if numberOfProcesses == nil && self.numberOfProcesses == 0 {
             return []
         }
         
         let task = Process()
         task.launchPath = "/usr/bin/top"
-        task.arguments = ["-l", "1", "-o", "mem", "-n", "\(self.numberOfProcesses)", "-stats", "pid,command,mem"]
+        task.arguments = ["-l", "1", "-o", "mem", "-n", "\(numberOfProcesses ?? self.numberOfProcesses)", "-stats", "pid,command,mem"]
         
         let outputPipe = Pipe()
         let errorPipe = Pipe()
@@ -205,7 +205,6 @@ public class RAMProcessReader{
             }
         }
         
-        print(processes)
         return processes
     }
     
@@ -239,12 +238,9 @@ public class RAMProcessReader{
         let pid = Int(pidString.filter("01234567890.".contains)) ?? 0
         var usage = Double(usageString.filter("01234567890.".contains)) ?? 0
         if usageString.last == "G" {
-            usage *= 1024 // apply gigabyte multiplier
+            usage *= 1024 // G → MB
         } else if usageString.last == "K" {
-            usage /= 1024 // apply kilobyte divider
-        } else if usageString.last == "M" && usageString.count == 5 {
-            usage /= 1024
-            usage *= 1000
+            usage /= 1024 // K → MB
         }
         
         var name: String = command
@@ -252,7 +248,7 @@ public class RAMProcessReader{
             name = n
         }
         
-        return TopProcess(pid: pid, name: name, usage: usage * Double(1000 * 1000))
+        return TopProcess(pid: pid, name: name, usage: usage * Double(1024 * 1024))
     }
 }
 

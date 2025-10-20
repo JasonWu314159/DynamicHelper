@@ -36,9 +36,22 @@
 		966C14202DF5A19100FD1497 /* libIOReport.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libIOReport.tbd; path = usr/lib/libIOReport.tbd; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		96B181552EA67B0F00B0BDCD /* Exceptions for "DynamicHelper" folder in "Compile Sources" phase from "DynamicHelper" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = 966C13A12DF5A15C00FD1497 /* Sources */;
+			membershipExceptions = (
+				Objc/AppleScriptSafeExecutor.h,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		966C13A72DF5A15C00FD1497 /* DynamicHelper */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				96B181552EA67B0F00B0BDCD /* Exceptions for "DynamicHelper" folder in "Compile Sources" phase from "DynamicHelper" target */,
+			);
 			path = DynamicHelper;
 			sourceTree = "<group>";
 		};

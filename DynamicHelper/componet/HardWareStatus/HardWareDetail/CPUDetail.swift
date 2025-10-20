@@ -10,5 +10,13 @@ import SwiftUI
 struct CPUDetail: View {
     var body: some View {
         Text("Hello, CPU!")
+            .onAppear {
+                DispatchQueue.global().async{
+                    Task {
+                        let _ = await FrequencyReader.shared.read()
+//                        print(FrequencyReader.shared.)
+                    }
+                }
+            }
     }
 }

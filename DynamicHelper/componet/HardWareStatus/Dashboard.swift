@@ -29,7 +29,9 @@ struct UsageTypeBoard: View {
     var label: String      // 中間顯示的文字
     var lineWidth: CGFloat
     var size: CGFloat = 110
+    var testSize: CGFloat = 18
     var backgroundColor: Color
+    var TypeDetial: Bool = true
     var onTap: (() -> Void)?
     
     @State private var isHover: Bool = false
@@ -45,12 +47,15 @@ struct UsageTypeBoard: View {
         else {return sum}
     }
     
-    init(usageType: [UsageType], label: String, lineWidth: CGFloat = 17, backgroundColor: Color = .gray.opacity(0.6),action: (() -> Void)? = nil){
+    init(usageType: [UsageType], label: String, lineWidth: CGFloat = 17, size: CGFloat = 110, testSize: CGFloat = 18, backgroundColor: Color = .gray.opacity(0.6),TypeDetial: Bool = true ,action: (() -> Void)? = nil){
         self.usageType = usageType
         self.label = label
         self.lineWidth = lineWidth
         self.backgroundColor = backgroundColor
         self.onTap = action
+        self.TypeDetial = TypeDetial
+        self.size = size
+        self.testSize = testSize
         
         var accumulation: Double = 0
         for i in 0..<self.usageType.count{
@@ -76,42 +81,46 @@ struct UsageTypeBoard: View {
                             .foregroundStyle(backgroundColor)
                     }.rotationEffect(Angle.degrees(-90))
                     Text(label)
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.system(size: testSize, weight: .bold))
                         .foregroundStyle(.white)
                         .multilineTextAlignment(.center)
                 }
                 .scaleEffect(0.9)
             }
             .frame(width: size, height: size)
-            .hoverPressEffect(HBG:0.2,PBG: 0.1,CR:15){
-                onTap?()
+            .if(onTap != nil){content in 
+                content.hoverPressEffect(HBG:0.2,PBG: 0.1,CR:15){
+                    onTap?()
+                }
             }
-            Spacer()
-            HStack(spacing:0){
-                let size:CGFloat = 7;
-                let space:CGFloat = 1;
-                let spacer:CGFloat = 2;
-                Spacer(minLength: spacer)
-                ForEach(usageType, id: \.id) { type in
+            if(TypeDetial){
+                Spacer()
+                HStack(spacing:0){
+                    let size:CGFloat = 7;
+                    let space:CGFloat = 1;
+                    let spacer:CGFloat = 2;
+                    Spacer(minLength: spacer)
+                    ForEach(usageType, id: \.id) { type in
+                        HStack(spacing:space){
+                            RoundedRectangle(cornerRadius: size/4)
+                                .foregroundStyle(type.foregroundColor)
+                                .frame(width: size, height: size)
+                            Text(type.name)
+                                .font(.system(size: size))
+                                .foregroundStyle(.white)
+                        }
+                        Spacer(minLength: spacer)
+                    }
                     HStack(spacing:space){
                         RoundedRectangle(cornerRadius: size/4)
-                            .foregroundStyle(type.foregroundColor)
+                            .foregroundStyle(backgroundColor)
                             .frame(width: size, height: size)
-                        Text(type.name)
+                        Text("閒置")
                             .font(.system(size: size))
                             .foregroundStyle(.white)
                     }
                     Spacer(minLength: spacer)
                 }
-                HStack(spacing:space){
-                    RoundedRectangle(cornerRadius: size/4)
-                        .foregroundStyle(backgroundColor)
-                        .frame(width: size, height: size)
-                    Text("閒置")
-                        .font(.system(size: size))
-                        .foregroundStyle(.white)
-                }
-                Spacer(minLength: spacer)
             }
             Spacer()
         }

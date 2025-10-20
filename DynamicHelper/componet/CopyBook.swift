@@ -8,7 +8,6 @@
 import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
-import Inspect
 
 
 class StringStorage: ObservableObject {
@@ -72,56 +71,11 @@ class StringStorage: ObservableObject {
 
 
 struct CopyBookScroller: View {
-    @State private var offsetX:CGFloat = 0
-    @State private var maxWidth:CGFloat = 0
-    @State private var lastItemCount: Int = 0
-    var body: some View {
-        ZStack() {
-            
-            CopyBook()
-            .background(
-                GeometryReader { geo in
-                    Color.clear
-                        .onAppear {
-                            maxWidth = geo.size.width
-                        }
-                }
-            )
-            RoundedRectangle(cornerRadius: 5)
-                .stroke(
-                    Color(red: 0.5, green: 0.5, blue: 0.5),
-                    lineWidth: 0
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .scaleEffect(x:1.05, y:1.1)
-        }
-        .frame(height: 50,alignment: .leading)
-        .frame(maxWidth: .infinity)
-    }
-    
-    func offsetAnimation(_ to:CGFloat,duration:Double = 0.2){
-        
-        let stepTime = 0.01
-        let d = (duration * 100).rounded() / 100
-        let totalSteps = Int(d/stepTime)
-        let deltha:CGFloat = to - offsetX
-        let delthaEveryStep:CGFloat = deltha / CGFloat(totalSteps)
-        for i in 0..<totalSteps{
-            DispatchQueue.main.asyncAfter(deadline: .now() + stepTime*CGFloat(i)){
-                offsetX += delthaEveryStep
-                if offsetX < 0{offsetX=0;return}
-            }
-        }
-    }
-}
-
-struct CopyBook: View {
     @ObservedObject var Strings:StringStorage = StringStorage.shared
-    @State private var AddButtonIsHover:Bool = false
     var body: some View {
         HStack(spacing: 0) {
             ScrollViewReader { proxy in
-                ScrollView(.horizontal) {
+                ScrollView(.horizontal,showsIndicators: false ) {
                     HStack(spacing: 0) {
                         Rectangle()
                             .frame(width: 1)
@@ -136,7 +90,6 @@ struct CopyBook: View {
                         }.id(Strings.containID)
                         
                         Image(systemName: "plus")
-                            .id(Strings.Item.count*3)
                             .font(.system(size: 17))
                             .foregroundStyle(.white)
                             .frame(width: 35, height: 35)
@@ -153,12 +106,10 @@ struct CopyBook: View {
                             }
                     }
                 }
-                .inspect { (nsScrollView: NSScrollView) in
-                    nsScrollView.hasHorizontalScroller = false
-                    nsScrollView.hasVerticalScroller = false
-                }
             }
         }
+        .frame(height: 50,alignment: .leading)
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -192,38 +143,34 @@ struct CopyBook_Previews:View {
                 }
             }
             if(isHovered){
-                HStack{
-                    Spacer()
-                    VStack{
-                        ZStack{
-                            Circle()
-                                .fill(Color.black) // 填滿藍色
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                
-                            Image(systemName: "x.circle.fill")
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .foregroundStyle(.gray)
-                                .onTapGesture {
-                                    if id >= 0 && id < StringStorage.shared.Item.count {
-                                        withAnimation(.easeInOut(duration: 0.2)){
-                                            offsetX = -objectWidth
-                                        }
-                                        widthAnimate(0,duration:0.2)
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.21) {
-                                            StringStorage.shared.Item.remove(at: id)
-                                            StringStorage.shared.containID = UUID()
-                                        }
-                                    }
+                ZStack{
+                    Circle()
+                        .fill(Color.black) // 填滿藍色
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    
+                    Image(systemName: "x.circle.fill")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .foregroundStyle(.gray)
+                        .onTapGesture {
+                            if id >= 0 && id < StringStorage.shared.Item.count {
+                                withAnimation(.easeInOut(duration: 0.2)){
+                                    offsetX = -objectWidth
                                 }
-                        }.frame(width: 16, height: 16)
-                            .offset(x:8)
-                        Spacer()
-                    }
-                }
+                                widthAnimate(0,duration:0.2)
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.21) {
+                                    StringStorage.shared.Item.remove(at: id)
+                                    StringStorage.shared.containID = UUID()
+                                }
+                            }
+                        }
+                }.frame(width: 16, height: 16)
+                    .offset(x:width/2,y:-25+8)
+                
             }
         }
         .offset(x: offsetX)
         .frame(width:width)
+        .frame(maxHeight:.infinity)
         .padding(.horizontal,width/8)
         .background(BackgroundColor)
         .clipped()

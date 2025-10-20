@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 
-var MusicInfo:(TrackName:String,ArtistAndAlbumName:String,artwork: NSImage?,currentTime:Double,totalTime:Double,progress:Double, isPlay:Bool) = ("","",nil,0,0,0,false)
+var MusicInfo:MediaInfo = MediaInfo()
 
 struct MediaInfo{
     var TrackName: String = ""
@@ -32,6 +32,28 @@ struct MediaInfo{
         bundleID: String = "",
         artwork: NSImage? = nil,
         isPlaying: Bool = false
+    ) {
+        self.TrackName = TrackName
+        self.Artist = Artist
+        self.Album = Album
+        self.currentTime = currentTime
+        self.totalTime = totalTime
+        self.progress = progress
+        self.bundleID = bundleID
+        self.artwork = artwork
+        self.isPlaying = isPlaying
+    }
+    
+    init(
+        _ TrackName: String = "",
+        _ Artist: String = "",
+        _ Album: String = "",
+        _ currentTime: Double = 0,
+        _ totalTime: Double = 0,
+        _ progress: Double = 0,
+        _ bundleID: String = "",
+        _ artwork: NSImage? = nil,
+        _ isPlaying: Bool = false
     ) {
         self.TrackName = TrackName
         self.Artist = Artist
@@ -67,8 +89,8 @@ func getMusicInfoViaShell() -> (trackName:String, artistName:String, albumName:S
     """
 
     var error: NSDictionary?
-    if let appleScript = NSAppleScript(source: script) {
-        let result = appleScript.executeAndReturnError(&error)
+    if let appleScript = NSAppleScript(source: script),
+       let result = AppleScriptSafeExecutor.execute(appleScript, error: &error) {
         if let error = error {
             print("getMusicInfoViaShell() ❌ AppleScript Error: \(error)")
             return nil
@@ -97,8 +119,10 @@ func getMusicPlaybackPosition() -> Double? {
     """
 
     var error: NSDictionary?
-    if let appleScript = NSAppleScript(source: script) {
-        let result = appleScript.executeAndReturnError(&error)
+    if let appleScript = NSAppleScript(source: script),
+       let result = AppleScriptSafeExecutor.execute(appleScript, error: &error) {
+        
+
         if let error = error {
             print("getMusicPlaybackPosition() AppleScript Error: \(error)")
             return nil
@@ -128,11 +152,10 @@ func saveMusicArtworkToTemp() {
     """
 
     var error: NSDictionary?
-    if let appleScript = NSAppleScript(source: script) {
-        _ = appleScript.executeAndReturnError(&error)
-        if let error = error {
-            print("saveMusicArtworkToTemp() AppleScript Error: \(error)")
-        }
+    guard let appleScript = NSAppleScript(source: script) else { return }
+    AppleScriptSafeExecutor.execute(appleScript, error: &error)
+    if let error = error {
+        print("saveMusicArtworkToTemp() AppleScript Error: \(error)")
     }
 }
 
@@ -162,18 +185,15 @@ func getCurrentTrackDuration() -> Double? {
     """
 
     var error: NSDictionary?
-    if let appleScript = NSAppleScript(source: script) {
-        let result = appleScript.executeAndReturnError(&error)
-        if let error = error {
-            print("getCurrentTrackDuration() ❌ AppleScript Error: \(error)")
-            return nil
-        }
-        if result.doubleValue == -1 {
-            return nil
-        }
-        return result.doubleValue
+    guard let appleScript = NSAppleScript(source: script) else { return nil }
+
+    if let result = AppleScriptSafeExecutor.execute(appleScript, error: &error) {
+        let duration = result.doubleValue
+        return duration > 0 ? duration : nil
+    } else {
+        print("AppleScript failed: \(error ?? [:])")
+        return nil
     }
-    return nil
 }
 
 
@@ -196,15 +216,13 @@ func setMusicPlaybackPosition(_ seconds: Double) {
         end if
     end tell
     """
-
     var error: NSDictionary?
-    if let appleScript = NSAppleScript(source: script) {
-        appleScript.executeAndReturnError(&error)
-        if let error = error {
-            print("setMusicPlaybackPosition AppleScript Error: \(error)")
-        } else {
+    guard let appleScript = NSAppleScript(source: script) else { return }
+    AppleScriptSafeExecutor.execute(appleScript, error: &error)
+    if let error = error {
+        print("setMusicPlaybackPosition AppleScript Error: \(error)")
+    } else {
 //            print("✅ 播放位置已設定為 \(seconds) 秒")
-        }
     }
 }
 
@@ -218,13 +236,11 @@ func togglePlayPauseMusic(_ isPlay:Bool? = nil) {
         \(isPlay == nil ? "playpause" : (isPlay! ? "play": "pause"))
     end tell
     """
-
     var error: NSDictionary?
-    if let appleScript = NSAppleScript(source: script) {
-        appleScript.executeAndReturnError(&error)
-        if let error = error {
-            print("togglePlayPauseMusic ❌ AppleScript Error: \(error)")
-        }
+    guard let appleScript = NSAppleScript(source: script) else { return }
+    AppleScriptSafeExecutor.execute(appleScript, error: &error)
+    if let error = error {
+        print("togglePlayPauseMusic ❌ AppleScript Error: \(error)")
     }
 }
 
@@ -232,7 +248,8 @@ func nextTrack() {
     let isPlaying = isMusicPlaying()
     if(isPlaying==false || isPlaying==nil){togglePlayPauseMusic(true)}
     let script = "tell application \"Music\" to next track"
-    _ = NSAppleScript(source: script)?.executeAndReturnError(nil)
+    guard let appleScript = NSAppleScript(source: script) else { return }
+    AppleScriptSafeExecutor.execute(appleScript, error: nil)
 }
 
 func previousTrack(_ NowPlayingTime: Double = 0) {
@@ -246,14 +263,14 @@ func previousTrack(_ NowPlayingTime: Double = 0) {
     if currentTimestamp - time.lastPressTime > 2 && NowPlayingTime > 5{
         script = "tell application \"Music\" to set player position to 0"
     }
-    print(script)
-    _ = NSAppleScript(source: script)?.executeAndReturnError(nil)
     time.lastPressTime = currentTimestamp
+    guard let appleScript = NSAppleScript(source: script) else { return }
+    AppleScriptSafeExecutor.execute(appleScript, error: nil)
 }
 
 func isMusicPlaying(timeout: TimeInterval = 1.0) -> Bool? {
-        // AppleScript 內容：若 Music 有開，回傳是否正在播放；否則回傳 false
-        let script = """
+    // AppleScript 內容：若 Music 有開，回傳是否正在播放；否則回傳 false
+    let script = """
         tell application "Music"
             if it is running then
                 return player state is playing
@@ -262,44 +279,44 @@ func isMusicPlaying(timeout: TimeInterval = 1.0) -> Bool? {
             end if
         end tell
         """
-
-        // 以外部行程執行 osascript，避免 NSAppleScript 的執行緒/生命週期風險
-        let proc = Process()
-        proc.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
-        proc.arguments = ["-e", script]
-
-        let pipeOut = Pipe()
-        let pipeErr = Pipe()
-        proc.standardOutput = pipeOut
-        proc.standardError = pipeErr
-
-        do {
-            try proc.run()
-        } catch {
-            return nil
-        }
-
-        // 簡單 timeout，避免外部行程卡住
-        let deadline = Date().addingTimeInterval(timeout)
-        while proc.isRunning && Date() < deadline {
-            RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
-        }
-        if proc.isRunning { proc.terminate() }
-
-        let data = pipeOut.fileHandleForReading.readDataToEndOfFile()
-        guard let raw = String(data: data, encoding: .utf8)?
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .lowercased()
-        else { return nil }
-
-        switch raw {
-        case "true":  return true
-        case "false": return false
-        default:
-            // 可能是權限錯誤等情況，stderr 通常會有訊息，但這裡以 nil 表示「未知/失敗」
-            return nil
-        }
+    
+    // 以外部行程執行 osascript，避免 NSAppleScript 的執行緒/生命週期風險
+    let proc = Process()
+    proc.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+    proc.arguments = ["-e", script]
+    
+    let pipeOut = Pipe()
+    let pipeErr = Pipe()
+    proc.standardOutput = pipeOut
+    proc.standardError = pipeErr
+    
+    do {
+        try proc.run()
+    } catch {
+        return nil
     }
+    
+    // 簡單 timeout，避免外部行程卡住
+    let deadline = Date().addingTimeInterval(timeout)
+    while proc.isRunning && Date() < deadline {
+        RunLoop.current.run(mode: .default, before: Date().addingTimeInterval(0.01))
+    }
+    if proc.isRunning { proc.terminate() }
+    
+    let data = pipeOut.fileHandleForReading.readDataToEndOfFile()
+    guard let raw = String(data: data, encoding: .utf8)?
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+        .lowercased()
+    else { return nil }
+    
+    switch raw {
+    case "true":  return true
+    case "false": return false
+    default:
+        // 可能是權限錯誤等情況，stderr 通常會有訊息，但這裡以 nil 表示「未知/失敗」
+        return nil
+    }
+}
 
 func openMusic(){
     let script: String = """
@@ -310,7 +327,8 @@ func openMusic(){
         activate
     end tell
     """
-    _ = NSAppleScript(source: script)?.executeAndReturnError(nil)
+    guard let appleScript = NSAppleScript(source: script) else { return }
+    AppleScriptSafeExecutor.execute(appleScript, error: nil)
 }
 
 

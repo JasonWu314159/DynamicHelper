@@ -41,11 +41,12 @@ struct TextFormat {
     var length: Int
     func toString(_ haveSpace:Bool = false) -> String{Format()}
     
-    init(_ Value: Double, Unit: unit, length: Int = 3) {
+    init(_ Value: Double, Unit: unit, length: Int = 3, isBinary:Bool? = nil) {
         self.Value = Value
         self.Unit = Unit
         self.length = length
-        if [unit.ibyte_s,unit.ibyte].contains(Unit){isBinary = true}
+        if [unit.ibyte_s,unit.ibyte].contains(Unit){self.isBinary = true}
+        if let isBinary = isBinary {self.isBinary = isBinary}
     }
     
     private func Format(haveSpace:Bool = false) -> String{
@@ -101,8 +102,10 @@ struct TextFormat {
 struct MetricTile: View {
     var icon: NSImage? = nil
     var symbol: String? = nil
+    var dot: Color? = nil
     let title: String
     let value: String
+    var titleColor: Color = .white.opacity(0.7)
     let color: Color
     var textSize: CGFloat = 13
     var monospaced: Bool = false
@@ -111,14 +114,21 @@ struct MetricTile: View {
         HStack(spacing: 2) {
             if let icn = icon{
                 Image(nsImage: icn)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: textSize, height: textSize)
             }
-            if let sym = symbol{
+            else if let sym = symbol{
                 Image(systemName: sym)
                     .font(.system(size: textSize))
+            }else if let d = dot{
+                RoundedRectangle(cornerRadius: textSize*0.2)
+                    .fill(d)
+                    .frame(width: textSize, height: textSize)
             }
             Text(title)
                 .font(.system(size: textSize*0.8))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(titleColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
             Spacer()
@@ -126,7 +136,9 @@ struct MetricTile: View {
                 .font(.system(size: textSize, weight: .semibold, design: .rounded))
                 .foregroundStyle(color)
                 .if(monospaced) { v in v.monospacedDigit() }
-//                .lineLimit(1)
+                .if(!value.contains("\n")){ c in 
+                    c.lineLimit(1)
+                }
                 .minimumScaleFactor(0.6)
         }
         .padding(.vertical, 2)

@@ -31,7 +31,7 @@ struct MarqueeText: View {
         GeometryReader { geometry in
             let containerW = geometry.size.width
             TimelineView(.animation) { timeline in
-                let now = timeline.date
+                let now = textWidth > containerW ? timeline.date : Date()
                 let start = startTime ?? now
                 let elapsed = now.timeIntervalSince(start)
                 let dx = -CGFloat(elapsed) * speed
